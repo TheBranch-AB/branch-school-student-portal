@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Branch School Student Portal</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="dashboard">
+  <section class="left">
+    <div class="brand"><b>THE BRANCH SCHOOL</b><span>STUDENT PORTAL</span></div>
+    <div class="time"><strong id="clock">--:--</strong><span id="date">Today</span></div>
+    <form class="search" action="https://www.google.com/search">
+      <input name="q" placeholder="Search the web"><button>G</button>
+    </form>
+    <section class="panel">
+      <h3>MY SHORTCUTS</h3>
+      <div class="grid">
+        <a href="https://drive.google.com/"><img src="https://www.google.com/s2/favicons?domain=drive.google.com&sz=128"><span>Google Drive</span></a>
+        <a href="https://classroom.google.com/"><img src="https://www.google.com/s2/favicons?domain=classroom.google.com&sz=128"><span>Classroom</span></a>
+        <a href="https://mail.google.com/"><img src="https://www.google.com/s2/favicons?domain=mail.google.com&sz=128"><span>Gmail</span></a>
+        <a href="https://www.ixl.com/"><img src="https://www.google.com/s2/favicons?domain=ixl.com&sz=128"><span>IXL</span></a>
+        <a href="https://connected.mcgraw-hill.com/"><img src="https://www.google.com/s2/favicons?domain=connected.mcgraw-hill.com&sz=128"><span>Everyday Math</span></a>
+        <a href="https://test.mapnwea.org/"><img src="https://www.google.com/s2/favicons?domain=nwea.org&sz=128"><span>NWEA MAP</span></a>
+      </div>
+    </section>
+    <section class="panel today">
+      <h3>TODAY</h3>
+      <a href="https://calendar.google.com/calendar/u/0/r/day">Calendar <b>View schedule</b></a>
+      <a href="https://classroom.google.com/">Classroom <b>Check assignments</b></a>
+    </section>
+  </section>
+
+  <section class="center">
+    <img src="assets/portal-badge.png" class="badge">
+    <div class="values"><span>✓ <b>BE RESPONSIBLE</b></span><span>◆ <b>BE RESPECTFUL</b></span><span>♥ <b>BE SAFE</b></span></div>
+    <blockquote>“Excellence is not an act, but a habit.” <small>— Aristotle</small></blockquote>
+  </section>
+
+  <aside class="right">
+    <section class="panel student">
+      <h3>STUDENT INFO</h3>
+      <div class="studentrow"><div class="avatar">S</div><div><b>Student</b><span>Google sign-in ready to configure</span><small>The Branch School</small></div></div>
+      <button id="signin">Connect Google Account</button>
+    </section>
+    <section class="panel announcements">
+      <div class="head"><h3>ANNOUNCEMENTS</h3><span>LIVE</span></div>
+      <div id="announcements">Add the published Google Sheet CSV URL in config.js.</div>
+    </section>
+    <section class="panel quick">
+      <h3>QUICK LINKS</h3>
+      <a href="https://docs.google.com/">Google Docs ›</a>
+      <a href="https://slides.google.com/">Google Slides ›</a>
+      <a href="https://sheets.google.com/">Google Sheets ›</a>
+      <a href="https://calendar.google.com/calendar/u/0/r/day">Google Calendar ›</a>
+    </section>
+  </aside>
+</main>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
