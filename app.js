@@ -541,16 +541,43 @@ function getCurrentSchoolWeekBounds() {
   return { start, end };
 }
 
+
+function parseGoogleCalendarEventStart(event) {
+  const dateTime = event?.start?.dateTime;
+  if (dateTime) {
+    const parsed = new Date(dateTime);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  const dateOnly = event?.start?.date;
+  if (dateOnly) {
+    // IMPORTANT: YYYY-MM-DD passed directly to new Date() is treated as UTC.
+    // In Central Time that can move an all-day Friday event back to Thursday.
+    // Build it as a local calendar date instead.
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateOnly);
+    if (match) {
+      return new Date(
+        Number(match[1]),
+        Number(match[2]) - 1,
+        Number(match[3]),
+        12, 0, 0, 0
+      );
+    }
+  }
+
+  return null;
+}
+
 function getWeekScheduleItems() {
   const { start, end } = getCurrentSchoolWeekBounds();
 
   const calendarItems = weekCalendarEvents.map(event => {
-    const startDate = new Date(event?.start?.dateTime || event?.start?.date || 0);
+    const startDate = parseGoogleCalendarEventStart(event);
     return {
       type: "calendar",
       sortDate: startDate,
       title: event.summary || "Untitled event",
-      dateText: Number.isNaN(startDate.getTime()) ? "" : startDate.toLocaleDateString([], {
+      dateText: !startDate || Number.isNaN(startDate.getTime()) ? "" : startDate.toLocaleDateString([], {
         weekday: "long", month: "short", day: "numeric"
       }),
       timeText: formatCalendarEventTime(event),
@@ -995,8 +1022,10 @@ async function loadWeekdayCalendar() {
         return true;
       })
       .sort((a, b) => {
-        const aTime = new Date(a?.start?.dateTime || a?.start?.date || 0).getTime();
-        const bTime = new Date(b?.start?.dateTime || b?.start?.date || 0).getTime();
+        const aStart = parseGoogleCalendarEventStart(a);
+        const aTime = aStart ? aStart.getTime() : 0;
+        const bStart = parseGoogleCalendarEventStart(b);
+        const bTime = bStart ? bStart.getTime() : 0;
         return aTime - bTime;
       });
 
@@ -1024,9 +1053,9 @@ function classroomDueDateToDate(courseWork) {
     dueDate.year,
     dueDate.month - 1,
     dueDate.day,
-    Number(dueTime.hours || 23),
-    Number(dueTime.minutes || 59),
-    Number(dueTime.seconds || 0)
+    dueTime.hours ?? 23,
+    dueTime.minutes ?? 59,
+    dueTime.seconds ?? 0
   );
 }
 
