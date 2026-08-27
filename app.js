@@ -268,6 +268,26 @@ function handleGoogleSignIn(response) {
   }
 }
 
+function ensureGoogleIdentityServicesScript() {
+  if (window.google?.accounts) return;
+  if (document.querySelector('script[data-branch-google-gsi]') ||
+      document.querySelector('script[src*="accounts.google.com/gsi/client"]')) return;
+
+  const script = document.createElement("script");
+  script.src = "https://accounts.google.com/gsi/client";
+  script.async = true;
+  script.defer = true;
+  script.dataset.branchGoogleGsi = "true";
+  script.onerror = () => {
+    console.error("Could not load Google Identity Services.");
+    const status = document.getElementById("accountStatus");
+    if (status) status.textContent = "Google sign-in unavailable";
+  };
+  document.head.appendChild(script);
+}
+
+ensureGoogleIdentityServicesScript();
+
 function initializeGoogleSignIn() {
   const clientId = window.PORTAL_CONFIG?.googleClientId || "";
 
