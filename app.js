@@ -301,14 +301,21 @@ let weekCalendarEvents = [];
 let classroomAssignments = [];
 
 const GOOGLE_DATA_SESSION_KEY = "branchPortalGoogleDataToken";
+const GOOGLE_DATA_LOCAL_KEY = "branchPortalGoogleDataTokenPersistent";
+let automaticGoogleDataAttempted = false;
 
 function saveGoogleDataToken(tokenResponse) {
   try {
     const expiresInSeconds = Number(tokenResponse?.expires_in || 3600);
-    sessionStorage.setItem(GOOGLE_DATA_SESSION_KEY, JSON.stringify({
+    const payload = JSON.stringify({
       accessToken: tokenResponse?.access_token || "",
       expiresAt: Date.now() + Math.max(60, expiresInSeconds - 60) * 1000
-    }));
+    });
+
+    // sessionStorage covers normal refreshes in the same tab. localStorage lets a
+    // student open the dashboard in another tab without immediately reconnecting.
+    sessionStorage.setItem(GOOGLE_DATA_SESSION_KEY, payload);
+    localStorage.setItem(GOOGLE_DATA_LOCAL_KEY, payload);
   } catch (error) {
     console.warn("Could not cache Google data token:", error);
   }
@@ -316,22 +323,54 @@ function saveGoogleDataToken(tokenResponse) {
 
 function restoreGoogleDataToken() {
   try {
-    const saved = sessionStorage.getItem(GOOGLE_DATA_SESSION_KEY);
+    const saved =
+      sessionStorage.getItem(GOOGLE_DATA_SESSION_KEY) ||
+      localStorage.getItem(GOOGLE_DATA_LOCAL_KEY);
+
     if (!saved) return false;
 
     const token = JSON.parse(saved);
     if (!token?.accessToken || !token?.expiresAt || Date.now() >= token.expiresAt) {
       sessionStorage.removeItem(GOOGLE_DATA_SESSION_KEY);
+      localStorage.removeItem(GOOGLE_DATA_LOCAL_KEY);
       return false;
     }
 
     calendarAccessToken = token.accessToken;
     classroomAccessToken = token.accessToken;
+
+    // Repopulate session storage when the token came from local storage.
+    sessionStorage.setItem(GOOGLE_DATA_SESSION_KEY, saved);
     return true;
   } catch (error) {
     console.warn("Could not restore Google data token:", error);
     sessionStorage.removeItem(GOOGLE_DATA_SESSION_KEY);
+    localStorage.removeItem(GOOGLE_DATA_LOCAL_KEY);
     return false;
+  }
+}
+
+function hasSavedBranchPortalUser() {
+  try {
+    return Boolean(localStorage.getItem("branchPortalUser"));
+  } catch (error) {
+    return false;
+  }
+}
+
+function autoRequestGoogleDataAccess() {
+  if (automaticGoogleDataAttempted || calendarAccessToken || !calendarTokenClient) return;
+  if (!hasSavedBranchPortalUser()) return;
+
+  automaticGoogleDataAttempted = true;
+
+  // The scopes have already been approved by the school/user. Asking with an
+  // empty prompt lets Google reuse that approval when the browser allows it.
+  // If Google/browser policy requires a user gesture, the Connect fallback remains.
+  try {
+    calendarTokenClient.requestAccessToken({ prompt: "" });
+  } catch (error) {
+    console.warn("Automatic Google data authorization was not available:", error);
   }
 }
 
@@ -380,6 +419,11 @@ function initializeCalendarAuth() {
     ]).then(renderMiniWeekCalendar);
   } else {
     renderMiniWeekCalendar();
+
+    // Try to populate the live week automatically after Google Identity Services
+    // has finished initializing. This is intentionally no-prompt: if the browser
+    // or Google requires a user gesture, the Connect button remains as fallback.
+    setTimeout(autoRequestGoogleDataAccess, 350);
   }
 }
 
@@ -671,7 +715,7 @@ function renderMiniWeekCalendar() {
   } else {
     status.innerHTML = "";
     const text = document.createElement("span");
-    text.textContent = "Connect once to load the live school week. ";
+    text.textContent = automaticGoogleDataAttempted ? "Google needs one click to refresh the live week. " : "Loading live school week… ";
     const button = document.createElement("button");
     button.type = "button";
     button.className = "branch-miniweek-connect";
