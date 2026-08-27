@@ -35,6 +35,39 @@
       #branchMiniWeek .branch-miniweek-days{grid-template-columns:1fr 1fr}
       #branchClassroomSummary{align-items:flex-start;flex-direction:column}
     }
+
+    .quick-links .google-quick-links-scroll{
+      max-height:260px;
+      overflow-y:auto;
+      padding-right:4px;
+      scrollbar-width:thin;
+      scrollbar-color:rgba(142,240,108,.55) rgba(255,255,255,.06);
+    }
+    .quick-links .google-quick-links-scroll::-webkit-scrollbar{width:7px}
+    .quick-links .google-quick-links-scroll::-webkit-scrollbar-track{
+      background:rgba(255,255,255,.05);
+      border-radius:999px
+    }
+    .quick-links .google-quick-links-scroll::-webkit-scrollbar-thumb{
+      background:rgba(142,240,108,.48);
+      border-radius:999px
+    }
+    .quick-links .google-quick-link{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-height:42px
+    }
+    .quick-links .google-quick-link img{
+      width:22px;
+      height:22px;
+      flex:0 0 22px;
+      border-radius:5px
+    }
+    .quick-links .google-quick-link .google-quick-link-name{
+      flex:1;
+      min-width:0
+    }
   </style>
 </head>
 <body>
@@ -168,11 +201,41 @@
       </section>
 
       <section class="panel quick-links">
-        <div class="panel-title">QUICK LINKS</div>
-        <a href="https://docs.google.com/">Google Docs <span>›</span></a>
-        <a href="https://slides.google.com/">Google Slides <span>›</span></a>
-        <a href="https://sheets.google.com/">Google Sheets <span>›</span></a>
-        <a href="https://calendar.google.com/calendar/u/0/r/day">Google Calendar <span>›</span></a>
+        <div class="panel-title">GOOGLE QUICK LINKS</div>
+        <div class="google-quick-links-scroll">
+          <a class="google-quick-link" href="https://classroom.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=classroom.google.com&sz=64" alt="">
+            <span class="google-quick-link-name">Google Classroom</span><span>›</span>
+          </a>
+          <a class="google-quick-link" href="https://mail.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=mail.google.com&sz=64" alt="">
+            <span class="google-quick-link-name">Gmail</span><span>›</span>
+          </a>
+          <a class="google-quick-link" href="https://drive.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=drive.google.com&sz=64" alt="">
+            <span class="google-quick-link-name">Google Drive</span><span>›</span>
+          </a>
+          <a class="google-quick-link" href="https://docs.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=docs.google.com&sz=64" alt="">
+            <span class="google-quick-link-name">Google Docs</span><span>›</span>
+          </a>
+          <a class="google-quick-link" href="https://slides.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=slides.google.com&sz=64" alt="">
+            <span class="google-quick-link-name">Google Slides</span><span>›</span>
+          </a>
+          <a class="google-quick-link" href="https://sheets.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=sheets.google.com&sz=64" alt="">
+            <span class="google-quick-link-name">Google Sheets</span><span>›</span>
+          </a>
+          <a class="google-quick-link" href="https://calendar.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=calendar.google.com&sz=64" alt="">
+            <span class="google-quick-link-name">Google Calendar</span><span>›</span>
+          </a>
+          <a class="google-quick-link" href="https://sites.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=sites.google.com&sz=64" alt="">
+            <span class="google-quick-link-name">Google Sites</span><span>›</span>
+          </a>
+        </div>
       </section>
     </aside>
   </main>
