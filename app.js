@@ -603,14 +603,27 @@ function getWeekScheduleItems() {
       url: work.alternateLink || "https://classroom.google.com/"
     }));
 
+  // If an assignment appears in both Classroom and Google Calendar,
+  // trust Classroom for the due date/time.
+  const normalizeTitle = value =>
+    String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
+
+  const classroomTitles = new Set(
+    classroomItems.map(item => normalizeTitle(item.title)).filter(Boolean)
+  );
+
+  const filteredCalendarItems = calendarItems.filter(item => {
+    const titleKey = normalizeTitle(item.title);
+    return !titleKey || !classroomTitles.has(titleKey);
+  });
+
   const seen = new Set();
-  return [...calendarItems, ...classroomItems]
+  return [...classroomItems, ...filteredCalendarItems]
     .filter(item => {
-      // Classroom due dates can sometimes also appear as Calendar events. Avoid obvious duplicates.
-      const dayKey = Number.isNaN(item.sortDate?.getTime?.())
+      const dayKey = !item.sortDate || Number.isNaN(item.sortDate.getTime())
         ? ""
         : `${item.sortDate.getFullYear()}-${item.sortDate.getMonth() + 1}-${item.sortDate.getDate()}`;
-      const key = `${(item.title || "").trim().toLowerCase()}|${dayKey}`;
+      const key = `${normalizeTitle(item.title)}|${dayKey}|${item.type}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -1049,14 +1062,17 @@ function classroomDueDateToDate(courseWork) {
   if (!dueDate?.year || !dueDate?.month || !dueDate?.day) return null;
 
   const dueTime = courseWork?.dueTime || {};
-  return new Date(
-    dueDate.year,
-    dueDate.month - 1,
-    dueDate.day,
-    dueTime.hours ?? 23,
-    dueTime.minutes ?? 59,
-    dueTime.seconds ?? 0
-  );
+
+  // Google Classroom returns dueDate/dueTime in UTC.
+  // Build the instant in UTC, then let the browser display it in local time.
+  return new Date(Date.UTC(
+    Number(dueDate.year),
+    Number(dueDate.month) - 1,
+    Number(dueDate.day),
+    Number(dueTime.hours ?? 23),
+    Number(dueTime.minutes ?? 59),
+    Number(dueTime.seconds ?? 0)
+  ));
 }
 
 function formatClassroomDueDate(courseWork) {
