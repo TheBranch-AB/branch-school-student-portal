@@ -1365,3 +1365,61 @@ function updateDailyQuote(){
   quote.innerHTML = `“${item.text}”<small>— ${item.author}</small>`;
 }
 updateDailyQuote();
+
+
+/* ===== Keep the Branch School Dashboard open =====
+   External dashboard navigation opens in a new tab.
+   Google OAuth/sign-in controls are intentionally excluded. */
+(function enableDashboardNewTabNavigation() {
+  function isExternalHttpUrl(value) {
+    try {
+      const url = new URL(value, window.location.href);
+      return url.protocol === "http:" || url.protocol === "https:";
+    } catch {
+      return false;
+    }
+  }
+
+  // Existing and dynamically-created links/icons.
+  document.addEventListener("click", event => {
+    const link = event.target.closest("a[href]");
+    if (!link) return;
+
+    const href = link.getAttribute("href");
+    if (!href || href.startsWith("#") || href.startsWith("javascript:")) return;
+    if (!isExternalHttpUrl(href)) return;
+
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+  }, true);
+
+  // Catch normal GET search forms, including the dashboard Google search bar.
+  document.addEventListener("submit", event => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement)) return;
+
+    const action = form.getAttribute("action") || "";
+    const method = (form.getAttribute("method") || "get").toLowerCase();
+
+    if (method === "get" && isExternalHttpUrl(action)) {
+      form.target = "_blank";
+    }
+  }, true);
+
+  // Set attributes immediately for links/forms already present in the page.
+  document.querySelectorAll("a[href]").forEach(link => {
+    const href = link.getAttribute("href");
+    if (href && isExternalHttpUrl(href)) {
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+    }
+  });
+
+  document.querySelectorAll("form").forEach(form => {
+    const action = form.getAttribute("action") || "";
+    const method = (form.getAttribute("method") || "get").toLowerCase();
+    if (method === "get" && isExternalHttpUrl(action)) {
+      form.target = "_blank";
+    }
+  });
+})();
