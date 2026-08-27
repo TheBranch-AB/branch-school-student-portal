@@ -771,7 +771,7 @@ function renderMiniWeekCalendar() {
   }
 
   if (calendarAccessToken && classroomAccessToken) {
-    status.textContent = items.length === 1 ? "1 item this week" : `${items.length} items this week`;
+    status.textContent = items.length === 1 ? "1 event this week" : `${items.length} events this week`;
   } else {
     status.innerHTML = "";
     const text = document.createElement("span");
@@ -806,8 +806,8 @@ function updateWeeklyScheduleLabels() {
 
   if (scheduleBtn) {
     scheduleBtn.textContent = items.length === 1
-      ? "1 Item This Week ›"
-      : `${items.length} Items This Week ›`;
+      ? "1 Event This Week ›"
+      : `${items.length} Events This Week ›`;
     scheduleBtn.dataset.calendarLoaded = "true";
   }
 
@@ -888,8 +888,8 @@ function showWeekdayCalendarEvents() {
   }
 
   title.textContent = weekItems.length === 1
-    ? "1 Item This Week"
-    : `${weekItems.length} Items This Week`;
+    ? "1 Event This Week"
+    : `${weekItems.length} Events This Week`;
 
   list.innerHTML = "";
 
