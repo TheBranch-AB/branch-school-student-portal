@@ -69,6 +69,77 @@
       flex:1;
       min-width:0
     }
+  
+    /* Center-logo hover assignment preview */
+    .badge-stage { position: relative; }
+
+    #branchAssignmentHover {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -44%) scale(.97);
+      width: min(390px, 92%);
+      max-height: 360px;
+      overflow-y: auto;
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(24, 15, 54, .97);
+      border: 1px solid rgba(124, 255, 92, .28);
+      box-shadow: 0 18px 55px rgba(0,0,0,.42);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
+      z-index: 20;
+      backdrop-filter: blur(14px);
+    }
+
+    .badge-stage:hover #branchAssignmentHover,
+    .badge-stage:focus-within #branchAssignmentHover {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .branch-assignment-hover-title {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      color: #8cff6a;
+      margin-bottom: 12px;
+    }
+
+    .branch-assignment-hover-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 11px 12px;
+      margin-top: 8px;
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 12px;
+      background: rgba(255,255,255,.055);
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .branch-assignment-hover-item b {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .branch-assignment-hover-item span {
+      display: block;
+      font-size: 12px;
+      opacity: .76;
+    }
+
+    .branch-assignment-hover-empty {
+      padding: 14px 4px 4px;
+      opacity: .75;
+      font-size: 13px;
+    }
+
   </style>
 </head>
 <body>
@@ -157,6 +228,12 @@
     <section class="center-column">
       <div class="badge-stage">
         <img src="assets/portal-badge.png" class="portal-badge" alt="The Branch School Student Portal">
+        <div id="branchAssignmentHover" aria-live="polite">
+          <div class="branch-assignment-hover-title">ASSIGNMENTS DUE</div>
+          <div id="branchAssignmentHoverList">
+            <div class="branch-assignment-hover-empty">Loading assignments…</div>
+          </div>
+        </div>
       </div>
 
       <section class="expectations-main">
@@ -240,5 +317,58 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="config.js"></script>
   <script src="app.js?v=20260827-1613"></script>
+
+  <script>
+    (function () {
+      function refreshAssignmentHover() {
+        const list = document.getElementById("branchAssignmentHoverList");
+        if (!list) return;
+
+        const assignmentCards = Array.from(document.querySelectorAll(
+          '[data-branch-assignment], .branch-classroom-assignment, .classroom-assignment'
+        ));
+
+        if (assignmentCards.length) {
+          list.innerHTML = "";
+          assignmentCards.slice(0, 6).forEach(function (card) {
+            const clone = document.createElement("div");
+            clone.className = "branch-assignment-hover-item";
+            clone.innerHTML = card.innerHTML;
+            list.appendChild(clone);
+          });
+          return;
+        }
+
+        const summary = document.getElementById("branchClassroomSummaryText");
+        const summaryLink = document.getElementById("branchClassroomSummaryLink");
+        const text = (summary && summary.textContent || "").trim();
+
+        if (text && !/loading/i.test(text)) {
+          list.innerHTML = "";
+          const item = document.createElement("a");
+          item.className = "branch-assignment-hover-item";
+          item.href = (summaryLink && summaryLink.href) || "https://classroom.google.com/";
+          item.target = "_blank";
+          item.rel = "noopener noreferrer";
+          item.innerHTML = "<b>Google Classroom</b><span>" +
+            text.replace(/[&<>"']/g, function (c) {
+              return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+            }) + "</span>";
+          list.appendChild(item);
+        }
+      }
+
+      window.addEventListener("load", function () {
+        refreshAssignmentHover();
+        const target = document.getElementById("branchClassroomSummary");
+        if (target) {
+          new MutationObserver(refreshAssignmentHover).observe(target, {
+            childList: true, subtree: true, characterData: true
+          });
+        }
+      });
+    })();
+  </script>
+
 </body>
 </html>
