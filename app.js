@@ -1423,3 +1423,30 @@ updateDailyQuote();
     }
   });
 })();
+
+/* Google search: force results into a new tab. */
+(function forceDashboardSearchIntoNewTab() {
+  function install() {
+    const searchForm = document.querySelector("form.search");
+    if (!searchForm || searchForm.dataset.branchNewTabSearch === "true") return;
+    searchForm.dataset.branchNewTabSearch = "true";
+    searchForm.target = "_blank";
+    searchForm.addEventListener("submit", event => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const input = searchForm.querySelector('input[name="q"]');
+      const query = (input?.value || "").trim();
+      if (!query) { input?.focus(); return; }
+      window.open(
+        "https://www.google.com/search?q=" + encodeURIComponent(query),
+        "_blank",
+        "noopener,noreferrer"
+      );
+    }, true);
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", install, { once: true });
+  } else {
+    install();
+  }
+})();
