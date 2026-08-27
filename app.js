@@ -219,7 +219,7 @@ function handleGoogleSignIn(response) {
 
   const email = user.email || "";
   const name = user.name || "Student";
-  const allowedDomain = window.PORTAL_CONFIG?.allowedDomain || "thebranchschool.org";
+  const allowedDomain = window.PORTAL_CONFIG?.allowedDomain || "branchschool.org";
 
   if (!email.toLowerCase().endsWith("@" + allowedDomain.toLowerCase())) {
     document.getElementById("accountStatus").textContent = "School account required";
