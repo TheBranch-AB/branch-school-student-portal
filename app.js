@@ -296,6 +296,7 @@ initializeGoogleSignIn();
 
 let calendarTokenClient = null;
 let calendarAccessToken = "";
+let todaysCalendarEvents = [];
 
 function initializeCalendarAuth() {
   const clientId = window.PORTAL_CONFIG?.googleClientId || "";
@@ -320,6 +321,131 @@ function initializeCalendarAuth() {
       await loadTodaysCalendar();
     }
   });
+}
+
+function formatCalendarEventTime(event) {
+  const startValue = event?.start?.dateTime || event?.start?.date;
+  const endValue = event?.end?.dateTime || event?.end?.date;
+
+  if (!startValue) return "Time not available";
+
+  // Google uses date-only values for all-day events.
+  if (event?.start?.date && !event?.start?.dateTime) {
+    return "All day";
+  }
+
+  const start = new Date(startValue);
+  const end = endValue ? new Date(endValue) : null;
+  const timeOptions = { hour: "numeric", minute: "2-digit" };
+  const startText = start.toLocaleTimeString([], timeOptions);
+
+  if (!end || Number.isNaN(end.getTime())) return startText;
+  return `${startText} – ${end.toLocaleTimeString([], timeOptions)}`;
+}
+
+function ensureCalendarEventModal() {
+  let modal = document.getElementById("branchCalendarEventModal");
+  if (modal) return modal;
+
+  modal = document.createElement("div");
+  modal.id = "branchCalendarEventModal";
+  modal.setAttribute("aria-hidden", "true");
+  modal.innerHTML = `
+    <div class="branch-calendar-backdrop" data-calendar-close></div>
+    <section class="branch-calendar-dialog" role="dialog" aria-modal="true" aria-labelledby="branchCalendarEventTitle">
+      <button class="branch-calendar-close" type="button" aria-label="Close calendar events" data-calendar-close>×</button>
+      <div class="branch-calendar-kicker">Today's Schedule</div>
+      <h2 id="branchCalendarEventTitle">Calendar Events</h2>
+      <div id="branchCalendarEventList" class="branch-calendar-event-list"></div>
+      <a class="branch-calendar-open-google" href="https://calendar.google.com/calendar/u/0/r/day" target="_blank" rel="noopener noreferrer">Open Google Calendar ↗</a>
+    </section>`;
+
+  const style = document.createElement("style");
+  style.id = "branchCalendarEventModalStyles";
+  style.textContent = `
+    #branchCalendarEventModal{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}
+    #branchCalendarEventModal.is-open{display:flex}
+    #branchCalendarEventModal .branch-calendar-backdrop{position:absolute;inset:0;background:rgba(10,8,24,.72);backdrop-filter:blur(5px)}
+    #branchCalendarEventModal .branch-calendar-dialog{position:relative;width:min(560px,100%);max-height:min(72vh,680px);overflow:auto;border-radius:24px;padding:28px;background:#fff;color:#241b3b;box-shadow:0 24px 80px rgba(0,0,0,.35)}
+    #branchCalendarEventModal .branch-calendar-close{position:absolute;right:16px;top:12px;border:0;background:transparent;font-size:34px;line-height:1;cursor:pointer;color:#55476f}
+    #branchCalendarEventModal .branch-calendar-kicker{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#7258a5;margin-bottom:6px}
+    #branchCalendarEventModal h2{margin:0 42px 18px 0;font-size:28px}
+    #branchCalendarEventModal .branch-calendar-event-list{display:grid;gap:10px}
+    #branchCalendarEventModal .branch-calendar-event{padding:14px 16px;border:1px solid rgba(84,64,121,.16);border-radius:16px;background:#f8f6fb}
+    #branchCalendarEventModal .branch-calendar-event-time{font-size:13px;font-weight:800;color:#7258a5;margin-bottom:4px}
+    #branchCalendarEventModal .branch-calendar-event-name{font-size:17px;font-weight:800;color:#241b3b}
+    #branchCalendarEventModal .branch-calendar-event-meta{font-size:13px;color:#6a6274;margin-top:5px;white-space:pre-line}
+    #branchCalendarEventModal .branch-calendar-empty{padding:18px;border-radius:16px;background:#f8f6fb;color:#6a6274;text-align:center}
+    #branchCalendarEventModal .branch-calendar-open-google{display:inline-block;margin-top:18px;font-weight:800;text-decoration:none;color:#6746a5}
+  `;
+
+  document.head.appendChild(style);
+  document.body.appendChild(modal);
+
+  modal.querySelectorAll("[data-calendar-close]").forEach(el => {
+    el.addEventListener("click", closeCalendarEventModal);
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") closeCalendarEventModal();
+  });
+
+  return modal;
+}
+
+function closeCalendarEventModal() {
+  const modal = document.getElementById("branchCalendarEventModal");
+  if (!modal) return;
+  modal.classList.remove("is-open");
+  modal.setAttribute("aria-hidden", "true");
+}
+
+function showTodaysCalendarEvents() {
+  const modal = ensureCalendarEventModal();
+  const list = modal.querySelector("#branchCalendarEventList");
+  const title = modal.querySelector("#branchCalendarEventTitle");
+
+  if (!list || !title) return;
+
+  title.textContent =
+    todaysCalendarEvents.length === 1
+      ? "1 Event Today"
+      : `${todaysCalendarEvents.length} Events Today`;
+
+  list.innerHTML = "";
+
+  if (!todaysCalendarEvents.length) {
+    list.innerHTML = '<div class="branch-calendar-empty">No events are scheduled for today.</div>';
+  } else {
+    todaysCalendarEvents.forEach(event => {
+      const item = document.createElement("div");
+      item.className = "branch-calendar-event";
+
+      const time = document.createElement("div");
+      time.className = "branch-calendar-event-time";
+      time.textContent = formatCalendarEventTime(event);
+
+      const name = document.createElement("div");
+      name.className = "branch-calendar-event-name";
+      name.textContent = event.summary || "Untitled event";
+
+      item.appendChild(time);
+      item.appendChild(name);
+
+      const details = [event.location, event.description].filter(Boolean).join("\n");
+      if (details) {
+        const meta = document.createElement("div");
+        meta.className = "branch-calendar-event-meta";
+        meta.textContent = details;
+        item.appendChild(meta);
+      }
+
+      list.appendChild(item);
+    });
+  }
+
+  modal.classList.add("is-open");
+  modal.setAttribute("aria-hidden", "false");
 }
 
 async function loadTodaysCalendar() {
@@ -359,15 +485,16 @@ async function loadTodaysCalendar() {
     }
 
     const data = await response.json();
-    const events = data.items || [];
+    todaysCalendarEvents = data.items || [];
 
-    console.log("Today's calendar events:", events);
+    console.log("Today's calendar events:", todaysCalendarEvents);
 
     if (scheduleBtn) {
       scheduleBtn.textContent =
-        events.length === 1
+        todaysCalendarEvents.length === 1
           ? "1 Event Today ›"
-          : `${events.length} Events Today ›`;
+          : `${todaysCalendarEvents.length} Events Today ›`;
+      scheduleBtn.dataset.calendarLoaded = "true";
     }
 
     const todayCalendarLink =
@@ -375,28 +502,46 @@ async function loadTodaysCalendar() {
 
     if (todayCalendarLink) {
       todayCalendarLink.textContent =
-        events.length === 1
+        todaysCalendarEvents.length === 1
           ? "1 event today"
-          : `${events.length} events today`;
+          : `${todaysCalendarEvents.length} events today`;
     }
   } catch (error) {
     console.error("Calendar loading failed:", error);
-    if (scheduleBtn) scheduleBtn.textContent = "Calendar unavailable";
+    todaysCalendarEvents = [];
+    if (scheduleBtn) {
+      scheduleBtn.textContent = "Calendar unavailable";
+      scheduleBtn.dataset.calendarLoaded = "false";
+    }
   }
 }
 
-function requestCalendarAccess(event) {
-  if (event) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
-
+function requestCalendarAccess() {
   if (!calendarTokenClient) {
     console.error("Calendar OAuth is not ready yet.");
     return;
   }
 
+  // This is only used when the portal does not yet have Calendar access.
   calendarTokenClient.requestAccessToken({ prompt: "" });
+}
+
+function handleCalendarButtonClick(event) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  const scheduleBtn = event.currentTarget;
+
+  // Once events are loaded, clicking the count opens the event list and NEVER
+  // starts another OAuth popup.
+  if (scheduleBtn?.dataset.calendarLoaded === "true" || calendarAccessToken) {
+    showTodaysCalendarEvents();
+    return;
+  }
+
+  // First-use fallback: request Calendar permission only if we truly do not
+  // have a token yet. The OAuth callback will load today's events afterward.
+  requestCalendarAccess();
 }
 
 function wireCalendarButton() {
@@ -405,8 +550,9 @@ function wireCalendarButton() {
 
   scheduleBtn.removeAttribute("href");
   scheduleBtn.setAttribute("role", "button");
+  scheduleBtn.setAttribute("aria-label", "Show today's calendar events");
   scheduleBtn.style.cursor = "pointer";
-  scheduleBtn.addEventListener("click", requestCalendarAccess);
+  scheduleBtn.addEventListener("click", handleCalendarButtonClick);
 }
 
 initializeCalendarAuth();
