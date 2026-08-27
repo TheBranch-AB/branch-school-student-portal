@@ -458,7 +458,7 @@ function ensureCalendarEventModal() {
     <div class="branch-calendar-backdrop" data-calendar-close></div>
     <section class="branch-calendar-dialog" role="dialog" aria-modal="true" aria-labelledby="branchCalendarEventTitle">
       <button class="branch-calendar-close" type="button" aria-label="Close calendar events" data-calendar-close>×</button>
-      <div class="branch-calendar-kicker">Monday – Friday</div>
+      <div class="branch-calendar-kicker">This Week</div>
       <h2 id="branchCalendarEventTitle">Weekly Schedule</h2>
       <div id="branchCalendarEventList" class="branch-calendar-event-list"></div>
       <a class="branch-calendar-open-google" href="https://calendar.google.com/calendar/u/0/r/week" target="_blank" rel="noopener noreferrer">Open Google Calendar ↗</a>
@@ -584,14 +584,18 @@ function ensureMiniWeekCalendar() {
   remindersPanel.innerHTML = `
     <div id="branchMiniWeek">
       <div class="branch-miniweek-toolbar">
-        <div>
-          <div class="branch-miniweek-label">THIS WEEK</div>
-          <div class="branch-miniweek-title">Monday – Friday</div>
-        </div>
+        <div class="branch-miniweek-label">THIS WEEK</div>
         <a class="branch-miniweek-open" href="https://calendar.google.com/calendar/u/0/r/week" target="_blank" rel="noopener noreferrer">Open Calendar ↗</a>
       </div>
       <div class="branch-miniweek-days" id="branchMiniWeekDays"></div>
       <div class="branch-miniweek-status" id="branchMiniWeekStatus">Loading live schedule…</div>
+      <div id="branchClassroomSummary">
+        <div>
+          <div class="branch-classroom-summary-title">Classroom</div>
+          <div class="branch-classroom-summary-text" id="branchClassroomSummaryText">Loading assignments…</div>
+        </div>
+        <a class="branch-classroom-summary-link" id="branchClassroomSummaryLink" href="https://classroom.google.com/">View assignments ›</a>
+      </div>
     </div>`;
 
   host = document.getElementById("branchMiniWeek");
@@ -601,24 +605,27 @@ function ensureMiniWeekCalendar() {
     style.id = "branchMiniWeekStyles";
     style.textContent = `
       #branchMiniWeek{color:#fff}
-      #branchMiniWeek .branch-miniweek-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:12px}
-      #branchMiniWeek .branch-miniweek-label{font-size:11px;font-weight:900;letter-spacing:.14em;color:#8ef06c}
-      #branchMiniWeek .branch-miniweek-title{font-size:16px;font-weight:800;margin-top:2px}
+      #branchMiniWeek .branch-miniweek-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+      #branchMiniWeek .branch-miniweek-label{font-size:12px;font-weight:900;letter-spacing:.14em;color:#8ef06c}
       #branchMiniWeek .branch-miniweek-open{font-size:12px;font-weight:800;color:#8ef06c;text-decoration:none;white-space:nowrap}
-      #branchMiniWeek .branch-miniweek-days{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
-      #branchMiniWeek .branch-miniweek-day{min-width:0;border:1px solid rgba(255,255,255,.13);border-radius:12px;background:rgba(255,255,255,.045);padding:8px 7px;min-height:90px}
-      #branchMiniWeek .branch-miniweek-day.is-today{border-color:rgba(142,240,108,.75);background:rgba(142,240,108,.10)}
-      #branchMiniWeek .branch-miniweek-dayname{font-size:10px;font-weight:900;letter-spacing:.08em;color:#bdb7c8;text-transform:uppercase}
-      #branchMiniWeek .branch-miniweek-date{font-size:18px;font-weight:900;line-height:1.1;margin:2px 0 7px}
-      #branchMiniWeek .branch-miniweek-events{display:grid;gap:5px}
-      #branchMiniWeek .branch-miniweek-event{display:block;border-radius:8px;padding:5px 6px;background:rgba(142,240,108,.14);color:#fff;text-decoration:none;overflow:hidden}
+      #branchMiniWeek .branch-miniweek-days{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px}
+      #branchMiniWeek .branch-miniweek-day{min-width:0;border:1px solid rgba(255,255,255,.13);border-radius:14px;background:rgba(255,255,255,.045);padding:10px;min-height:112px}
+      #branchMiniWeek .branch-miniweek-day.is-today{border-color:rgba(142,240,108,.85);background:rgba(142,240,108,.10)}
+      #branchMiniWeek .branch-miniweek-dayname{font-size:10px;font-weight:900;letter-spacing:.09em;color:#bdb7c8;text-transform:uppercase}
+      #branchMiniWeek .branch-miniweek-date{font-size:22px;font-weight:900;line-height:1.1;margin:2px 0 8px}
+      #branchMiniWeek .branch-miniweek-events{display:grid;gap:6px}
+      #branchMiniWeek .branch-miniweek-event{display:block;width:100%;border:0;text-align:left;border-radius:9px;padding:7px;background:rgba(142,240,108,.14);color:#fff;overflow:hidden;cursor:pointer;font:inherit}
       #branchMiniWeek .branch-miniweek-event.classroom{background:rgba(141,111,210,.30)}
-      #branchMiniWeek .branch-miniweek-event-title{font-size:10px;font-weight:800;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      #branchMiniWeek .branch-miniweek-event-time{font-size:9px;color:#cfc9d9;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      #branchMiniWeek .branch-miniweek-empty{font-size:10px;color:#817b8d;padding-top:4px}
-      #branchMiniWeek .branch-miniweek-status{margin-top:10px;font-size:12px;color:#bdb7c8}
+      #branchMiniWeek .branch-miniweek-event-title{font-size:11px;font-weight:850;line-height:1.2;white-space:normal;overflow-wrap:anywhere}
+      #branchMiniWeek .branch-miniweek-event-time{font-size:9px;color:#cfc9d9;margin-top:3px;white-space:normal}
+      #branchMiniWeek .branch-miniweek-status{margin-top:9px;font-size:11px;color:#bdb7c8}
       #branchMiniWeek .branch-miniweek-connect{border:0;border-radius:999px;padding:7px 11px;background:#8ef06c;color:#10391d;font-weight:900;cursor:pointer}
-      @media(max-width:720px){#branchMiniWeek .branch-miniweek-days{grid-template-columns:1fr}}
+      #branchMiniWeek .branch-miniweek-noitems{padding:12px 0;color:#bdb7c8;font-size:12px}
+      #branchClassroomSummary{margin-top:12px;padding-top:11px;border-top:1px solid rgba(255,255,255,.11);display:flex;align-items:center;justify-content:space-between;gap:12px}
+      #branchClassroomSummary .branch-classroom-summary-title{font-size:11px;font-weight:900;letter-spacing:.12em;color:#8ef06c;text-transform:uppercase}
+      #branchClassroomSummary .branch-classroom-summary-text{font-size:11px;color:#d2ccd9;margin-top:3px}
+      #branchClassroomSummary .branch-classroom-summary-link{font-size:11px;font-weight:850;color:#8ef06c;text-decoration:none;white-space:nowrap}
+      @media(max-width:720px){#branchMiniWeek .branch-miniweek-days{grid-template-columns:1fr 1fr}}
     `;
     document.head.appendChild(style);
   }
@@ -632,74 +639,75 @@ function renderMiniWeekCalendar() {
 
   const daysHost = host.querySelector("#branchMiniWeekDays");
   const status = host.querySelector("#branchMiniWeekStatus");
+  const classroomText = host.querySelector("#branchClassroomSummaryText");
+  const classroomLink = host.querySelector("#branchClassroomSummaryLink");
   if (!daysHost || !status) return;
 
-  const { start } = getCurrentSchoolWeekBounds();
   const items = getWeekScheduleItems();
   const today = new Date();
   const todayKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
 
   daysHost.innerHTML = "";
 
-  for (let offset = 0; offset < 5; offset += 1) {
-    const day = new Date(start);
-    day.setDate(start.getDate() + offset);
-    const dayKey = `${day.getFullYear()}-${day.getMonth()}-${day.getDate()}`;
-    const dayItems = items.filter(item => {
-      const d = item.sortDate;
-      return d && !Number.isNaN(d.getTime()) &&
-        d.getFullYear() === day.getFullYear() &&
-        d.getMonth() === day.getMonth() &&
-        d.getDate() === day.getDate();
-    });
+  // Only render dates that actually contain an event or Classroom due date.
+  const grouped = new Map();
+  items.forEach(item => {
+    const d = item.sortDate;
+    if (!d || Number.isNaN(d.getTime())) return;
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    if (!grouped.has(key)) grouped.set(key, { day: new Date(d.getFullYear(), d.getMonth(), d.getDate()), items: [] });
+    grouped.get(key).items.push(item);
+  });
 
-    const column = document.createElement("div");
-    column.className = `branch-miniweek-day${dayKey === todayKey ? " is-today" : ""}`;
+  [...grouped.values()]
+    .sort((a, b) => a.day - b.day)
+    .forEach(group => {
+      const day = group.day;
+      const dayKey = `${day.getFullYear()}-${day.getMonth()}-${day.getDate()}`;
+      const column = document.createElement("div");
+      column.className = `branch-miniweek-day${dayKey === todayKey ? " is-today" : ""}`;
 
-    const heading = document.createElement("div");
-    heading.innerHTML = `
-      <div class="branch-miniweek-dayname">${day.toLocaleDateString([], { weekday: "short" })}</div>
-      <div class="branch-miniweek-date">${day.getDate()}</div>`;
-    column.appendChild(heading);
+      const heading = document.createElement("div");
+      heading.innerHTML = `
+        <div class="branch-miniweek-dayname">${day.toLocaleDateString([], { weekday: "short" })}</div>
+        <div class="branch-miniweek-date">${day.getDate()}</div>`;
+      column.appendChild(heading);
 
-    const events = document.createElement("div");
-    events.className = "branch-miniweek-events";
+      const events = document.createElement("div");
+      events.className = "branch-miniweek-events";
 
-    if (!dayItems.length) {
-      const empty = document.createElement("div");
-      empty.className = "branch-miniweek-empty";
-      empty.textContent = "—";
-      events.appendChild(empty);
-    } else {
-      dayItems.slice(0, 3).forEach(item => {
-        const eventEl = document.createElement(item.url ? "a" : "div");
+      group.items.slice(0, 4).forEach(item => {
+        const eventEl = document.createElement("button");
+        eventEl.type = "button";
         eventEl.className = `branch-miniweek-event ${item.type === "classroom" ? "classroom" : "calendar"}`;
-        if (item.url) {
-          eventEl.href = item.url;
-          eventEl.target = "_blank";
-          eventEl.rel = "noopener noreferrer";
-          eventEl.title = `${item.title}${item.sourceText ? " • " + item.sourceText : ""}`;
-        }
+        eventEl.title = `${item.title}${item.sourceText ? " • " + item.sourceText : ""}`;
         eventEl.innerHTML = `
           <div class="branch-miniweek-event-title"></div>
           <div class="branch-miniweek-event-time"></div>`;
         eventEl.querySelector(".branch-miniweek-event-title").textContent = item.title || "Untitled item";
         eventEl.querySelector(".branch-miniweek-event-time").textContent = item.timeText || "";
+        eventEl.addEventListener("click", () => showScheduleItemDetails(item));
         events.appendChild(eventEl);
       });
 
-      if (dayItems.length > 3) {
+      if (group.items.length > 4) {
         const more = document.createElement("button");
         more.type = "button";
         more.className = "branch-miniweek-connect";
-        more.textContent = `+${dayItems.length - 3} more`;
+        more.textContent = `+${group.items.length - 4} more`;
         more.addEventListener("click", showWeekdayCalendarEvents);
         events.appendChild(more);
       }
-    }
 
-    column.appendChild(events);
-    daysHost.appendChild(column);
+      column.appendChild(events);
+      daysHost.appendChild(column);
+    });
+
+  if (!items.length && calendarAccessToken && classroomAccessToken) {
+    const empty = document.createElement("div");
+    empty.className = "branch-miniweek-noitems";
+    empty.textContent = "No events or due dates this week.";
+    daysHost.appendChild(empty);
   }
 
   if (calendarAccessToken && classroomAccessToken) {
@@ -707,7 +715,7 @@ function renderMiniWeekCalendar() {
   } else {
     status.innerHTML = "";
     const text = document.createElement("span");
-    text.textContent = automaticGoogleDataAttempted ? "Google needs one click to refresh the live week. " : "Loading live school week… ";
+    text.textContent = automaticGoogleDataAttempted ? "Google needs one click to refresh. " : "Loading live schedule… ";
     const button = document.createElement("button");
     button.type = "button";
     button.className = "branch-miniweek-connect";
@@ -715,6 +723,21 @@ function renderMiniWeekCalendar() {
     button.addEventListener("click", requestCalendarAccess);
     status.append(text, button);
   }
+
+  // Keep Classroom visible as its own summary, while Classroom due dates also appear above.
+  if (classroomText) {
+    if (classroomAccessToken) {
+      classroomText.textContent = classroomAssignments.length === 1
+        ? "1 upcoming assignment"
+        : `${classroomAssignments.length} upcoming assignments`;
+    } else {
+      classroomText.textContent = "Connect to load assignments";
+    }
+  }
+  if (classroomLink) {
+    classroomLink.dataset.classroomLoaded = classroomAccessToken ? "true" : "false";
+  }
+  wireClassroomLinks();
 }
 
 function updateWeeklyScheduleLabels() {
@@ -731,6 +754,62 @@ function updateWeeklyScheduleLabels() {
   renderMiniWeekCalendar();
 }
 
+function showScheduleItemDetails(scheduleItem) {
+  if (!scheduleItem) return;
+
+  const modal = ensureCalendarEventModal();
+  const list = modal.querySelector("#branchCalendarEventList");
+  const title = modal.querySelector("#branchCalendarEventTitle");
+  const kicker = modal.querySelector(".branch-calendar-kicker");
+  const openLink = modal.querySelector(".branch-calendar-open-google");
+  if (!list || !title || !kicker || !openLink) return;
+
+  kicker.textContent = scheduleItem.type === "classroom" ? "Google Classroom" : "Google Calendar";
+  title.textContent = scheduleItem.title || "Event Details";
+  list.innerHTML = "";
+
+  const detail = document.createElement("div");
+  detail.className = "branch-calendar-event";
+
+  const date = document.createElement("div");
+  date.className = "branch-calendar-event-date";
+  date.textContent = scheduleItem.dateText || "";
+
+  const time = document.createElement("div");
+  time.className = "branch-calendar-event-time";
+  time.textContent = scheduleItem.timeText || "";
+
+  const source = document.createElement("div");
+  source.className = "branch-calendar-event-name";
+  source.textContent = scheduleItem.sourceText || (scheduleItem.type === "classroom" ? "Google Classroom" : "Google Calendar");
+
+  if (date.textContent) detail.appendChild(date);
+  if (time.textContent) detail.appendChild(time);
+  detail.appendChild(source);
+
+  if (scheduleItem.details) {
+    const meta = document.createElement("div");
+    meta.className = "branch-calendar-event-meta";
+    meta.textContent = scheduleItem.details;
+    detail.appendChild(meta);
+  }
+
+  list.appendChild(detail);
+
+  if (scheduleItem.url) {
+    openLink.style.display = "inline-block";
+    openLink.href = scheduleItem.url;
+    openLink.textContent = scheduleItem.type === "classroom"
+      ? "Open in Google Classroom ↗"
+      : "Open in Google Calendar ↗";
+  } else {
+    openLink.style.display = "none";
+  }
+
+  modal.classList.add("is-open");
+  modal.setAttribute("aria-hidden", "false");
+}
+
 function showWeekdayCalendarEvents() {
   const modal = ensureCalendarEventModal();
   const list = modal.querySelector("#branchCalendarEventList");
@@ -739,6 +818,14 @@ function showWeekdayCalendarEvents() {
   if (!list || !title) return;
 
   const weekItems = getWeekScheduleItems();
+  const kicker = modal.querySelector(".branch-calendar-kicker");
+  const openLink = modal.querySelector(".branch-calendar-open-google");
+  if (kicker) kicker.textContent = "This Week";
+  if (openLink) {
+    openLink.style.display = "inline-block";
+    openLink.href = "https://calendar.google.com/calendar/u/0/r/week";
+    openLink.textContent = "Open Google Calendar ↗";
+  }
 
   title.textContent = weekItems.length === 1
     ? "1 Item This Week"
