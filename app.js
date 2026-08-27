@@ -27,7 +27,7 @@ function setStudentInfo(name="Student", email="Google sign-in not connected yet"
   document.getElementById("studentEmail").textContent = email;
   document.getElementById("avatar").textContent = (name || "S").charAt(0).toUpperCase();
   document.getElementById("accountStatus").textContent =
-    email && email.endsWith("@thebranchschool.org") ? "Branch account" : "Not connected";
+    email && email.endsWith("@branchschool.org") ? "Branch account" : "Not connected";
 }
 setStudentInfo();
 
