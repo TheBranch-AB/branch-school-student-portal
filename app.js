@@ -367,7 +367,7 @@ function ensureCalendarEventModal() {
     <section class="branch-calendar-dialog" role="dialog" aria-modal="true" aria-labelledby="branchCalendarEventTitle">
       <button class="branch-calendar-close" type="button" aria-label="Close calendar events" data-calendar-close>×</button>
       <div class="branch-calendar-kicker">Monday – Friday</div>
-      <h2 id="branchCalendarEventTitle">Calendar Events</h2>
+      <h2 id="branchCalendarEventTitle">Weekly Schedule</h2>
       <div id="branchCalendarEventList" class="branch-calendar-event-list"></div>
       <a class="branch-calendar-open-google" href="https://calendar.google.com/calendar/u/0/r/week" target="_blank" rel="noopener noreferrer">Open Google Calendar ↗</a>
     </section>`;
@@ -413,6 +413,91 @@ function closeCalendarEventModal() {
   modal.setAttribute("aria-hidden", "true");
 }
 
+function getCurrentSchoolWeekBounds() {
+  const now = new Date();
+  const day = now.getDay();
+  const daysFromMonday = day === 0 ? 6 : day - 1;
+
+  const start = new Date(now);
+  start.setDate(now.getDate() - daysFromMonday);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setDate(start.getDate() + 5); // Saturday 12:00 AM, exclusive
+  end.setHours(0, 0, 0, 0);
+
+  return { start, end };
+}
+
+function getWeekScheduleItems() {
+  const { start, end } = getCurrentSchoolWeekBounds();
+
+  const calendarItems = weekCalendarEvents.map(event => {
+    const startDate = new Date(event?.start?.dateTime || event?.start?.date || 0);
+    return {
+      type: "calendar",
+      sortDate: startDate,
+      title: event.summary || "Untitled event",
+      dateText: Number.isNaN(startDate.getTime()) ? "" : startDate.toLocaleDateString([], {
+        weekday: "long", month: "short", day: "numeric"
+      }),
+      timeText: formatCalendarEventTime(event),
+      sourceText: event._calendarName || "Google Calendar",
+      details: [event.location, event.description].filter(Boolean).join("\n"),
+      url: event.htmlLink || ""
+    };
+  });
+
+  const classroomItems = classroomAssignments
+    .map(work => ({ work, due: classroomDueDateToDate(work) }))
+    .filter(item => item.due && item.due >= start && item.due < end)
+    .map(({ work, due }) => ({
+      type: "classroom",
+      sortDate: due,
+      title: work.title || "Untitled assignment",
+      dateText: due.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" }),
+      timeText: work.dueTime
+        ? due.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+        : "Due this day",
+      sourceText: `Google Classroom • ${work.courseName || "Classroom"}`,
+      details: work.description || "",
+      url: work.alternateLink || "https://classroom.google.com/"
+    }));
+
+  const seen = new Set();
+  return [...calendarItems, ...classroomItems]
+    .filter(item => {
+      // Classroom due dates can sometimes also appear as Calendar events. Avoid obvious duplicates.
+      const dayKey = Number.isNaN(item.sortDate?.getTime?.())
+        ? ""
+        : `${item.sortDate.getFullYear()}-${item.sortDate.getMonth() + 1}-${item.sortDate.getDate()}`;
+      const key = `${(item.title || "").trim().toLowerCase()}|${dayKey}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => a.sortDate - b.sortDate);
+}
+
+function updateWeeklyScheduleLabels() {
+  const items = getWeekScheduleItems();
+  const scheduleBtn = document.querySelector(".schedule-btn");
+  const todayCalendarLink = document.querySelector('.reminder-line a[href*="calendar.google.com"]');
+
+  if (scheduleBtn) {
+    scheduleBtn.textContent = items.length === 1
+      ? "1 Item This Week ›"
+      : `${items.length} Items This Week ›`;
+    scheduleBtn.dataset.calendarLoaded = "true";
+  }
+
+  if (todayCalendarLink) {
+    todayCalendarLink.textContent = items.length === 1
+      ? "1 item this week"
+      : `${items.length} items this week`;
+  }
+}
+
 function showWeekdayCalendarEvents() {
   const modal = ensureCalendarEventModal();
   const list = modal.querySelector("#branchCalendarEventList");
@@ -420,40 +505,46 @@ function showWeekdayCalendarEvents() {
 
   if (!list || !title) return;
 
-  title.textContent =
-    weekCalendarEvents.length === 1
-      ? "1 Event This Week"
-      : `${weekCalendarEvents.length} Events This Week`;
+  const weekItems = getWeekScheduleItems();
+
+  title.textContent = weekItems.length === 1
+    ? "1 Item This Week"
+    : `${weekItems.length} Items This Week`;
 
   list.innerHTML = "";
 
-  if (!weekCalendarEvents.length) {
-    list.innerHTML = '<div class="branch-calendar-empty">No events are scheduled Monday through Friday this week.</div>';
+  if (!weekItems.length) {
+    list.innerHTML = '<div class="branch-calendar-empty">No calendar events or Classroom due dates are scheduled Monday through Friday this week.</div>';
   } else {
-    weekCalendarEvents.forEach(event => {
-      const item = document.createElement("div");
+    weekItems.forEach(scheduleItem => {
+      const item = document.createElement(scheduleItem.url ? "a" : "div");
       item.className = "branch-calendar-event";
+
+      if (scheduleItem.url) {
+        item.href = scheduleItem.url;
+        item.target = "_blank";
+        item.rel = "noopener noreferrer";
+        item.style.textDecoration = "none";
+        item.style.color = "inherit";
+      }
 
       const date = document.createElement("div");
       date.className = "branch-calendar-event-date";
-      const eventStart = new Date(event?.start?.dateTime || event?.start?.date);
-      date.textContent = Number.isNaN(eventStart.getTime())
-        ? ""
-        : eventStart.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
+      date.textContent = scheduleItem.dateText || "";
 
       const time = document.createElement("div");
       time.className = "branch-calendar-event-time";
-      time.textContent = formatCalendarEventTime(event);
+      time.textContent = scheduleItem.timeText || "";
 
       const name = document.createElement("div");
       name.className = "branch-calendar-event-name";
-      name.textContent = event.summary || "Untitled event";
+      name.textContent = scheduleItem.title || "Untitled item";
 
       if (date.textContent) item.appendChild(date);
-      item.appendChild(time);
+      if (time.textContent) item.appendChild(time);
       item.appendChild(name);
 
-      const details = [event._calendarName, event.location, event.description].filter(Boolean).join("\n");
+      const details = [scheduleItem.sourceText, scheduleItem.details].filter(Boolean).join("\n");
       if (details) {
         const meta = document.createElement("div");
         meta.className = "branch-calendar-event-meta";
@@ -474,17 +565,7 @@ async function loadWeekdayCalendar() {
 
   // Current school week: Monday 12:00 AM through Saturday 12:00 AM.
   // Saturday is the exclusive end, so weekends are never included.
-  const now = new Date();
-  const day = now.getDay();
-  const daysFromMonday = day === 0 ? 6 : day - 1;
-
-  const start = new Date(now);
-  start.setDate(now.getDate() - daysFromMonday);
-  start.setHours(0, 0, 0, 0);
-
-  const end = new Date(start);
-  end.setDate(start.getDate() + 5);
-  end.setHours(0, 0, 0, 0);
+  const { start, end } = getCurrentSchoolWeekBounds();
 
   const scheduleBtn = document.querySelector(".schedule-btn");
 
@@ -582,23 +663,7 @@ async function loadWeekdayCalendar() {
     console.log("Weekday calendars checked:", calendars.map(c => c.summary || c.id));
     console.log("Weekday calendar events:", weekCalendarEvents);
 
-    if (scheduleBtn) {
-      scheduleBtn.textContent =
-        weekCalendarEvents.length === 1
-          ? "1 Event This Week ›"
-          : `${weekCalendarEvents.length} Events This Week ›`;
-      scheduleBtn.dataset.calendarLoaded = "true";
-    }
-
-    const todayCalendarLink =
-      document.querySelector('.reminder-line a[href*="calendar.google.com"]');
-
-    if (todayCalendarLink) {
-      todayCalendarLink.textContent =
-        weekCalendarEvents.length === 1
-          ? "1 event this week"
-          : `${weekCalendarEvents.length} events this week`;
-    }
+    updateWeeklyScheduleLabels();
   } catch (error) {
     console.error("Calendar loading failed:", error);
     weekCalendarEvents = [];
@@ -810,10 +875,12 @@ async function loadClassroomAssignments() {
 
     console.log("Upcoming Classroom assignments:", classroomAssignments);
     updateClassroomLinkLabel();
+    updateWeeklyScheduleLabels();
   } catch (error) {
     console.error("Classroom loading failed:", error);
     classroomAssignments = [];
     updateClassroomLinkLabel(true);
+    updateWeeklyScheduleLabels();
   }
 }
 
