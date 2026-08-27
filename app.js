@@ -29,7 +29,7 @@ function setStudentInfo(name="Student", email="Google sign-in not connected yet"
   document.getElementById("accountStatus").textContent =
     email && email.endsWith("@branchschool.org") ? "Branch account" : "Not connected";
 }
-setStudentInfo();
+setStudentInfo("Student", "Waiting for Google sign-in...");
 
 function parseCsv(text){
   const rows=[];
@@ -227,6 +227,7 @@ function handleGoogleSignIn(response) {
   }
 
   setStudentInfo(name, email);
+  document.getElementById("accountStatus").textContent = "Branch account";
 }
 
 function initializeGoogleSignIn() {
