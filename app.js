@@ -314,6 +314,7 @@ function initializeCalendarAuth() {
     client_id: clientId,
     scope: [
       "https://www.googleapis.com/auth/calendar.events.readonly",
+      "https://www.googleapis.com/auth/calendar.readonly",
       "https://www.googleapis.com/auth/classroom.courses.readonly",
       "https://www.googleapis.com/auth/classroom.coursework.me.readonly"
     ].join(" "),
@@ -452,7 +453,7 @@ function showWeekdayCalendarEvents() {
       item.appendChild(time);
       item.appendChild(name);
 
-      const details = [event.location, event.description].filter(Boolean).join("\n");
+      const details = [event._calendarName, event.location, event.description].filter(Boolean).join("\n");
       if (details) {
         const meta = document.createElement("div");
         meta.className = "branch-calendar-event-meta";
@@ -472,7 +473,7 @@ async function loadWeekdayCalendar() {
   if (!calendarAccessToken) return;
 
   // Current school week: Monday 12:00 AM through Saturday 12:00 AM.
-  // Using Saturday as the exclusive end keeps Saturday/Sunday out entirely.
+  // Saturday is the exclusive end, so weekends are never included.
   const now = new Date();
   const day = now.getDay();
   const daysFromMonday = day === 0 ? 6 : day - 1;
@@ -485,36 +486,100 @@ async function loadWeekdayCalendar() {
   end.setDate(start.getDate() + 5);
   end.setHours(0, 0, 0, 0);
 
-  const params = new URLSearchParams({
-    timeMin: start.toISOString(),
-    timeMax: end.toISOString(),
-    singleEvents: "true",
-    orderBy: "startTime",
-    maxResults: "50"
-  });
-
   const scheduleBtn = document.querySelector(".schedule-btn");
 
   try {
     if (scheduleBtn) scheduleBtn.textContent = "Loading schedule…";
 
-    const response = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/primary/events?${params}`,
+    // Google Calendar's web UI can display events from several calendars at once
+    // (primary, Classroom course calendars, shared calendars, etc.).  Querying only
+    // /calendars/primary/events misses those.  First get the student's calendar
+    // list, then combine events from every calendar that is currently selected.
+    const calendarListResponse = await fetch(
+      "https://www.googleapis.com/calendar/v3/users/me/calendarList?minAccessRole=reader&showHidden=false&maxResults=250",
       {
-        headers: {
-          Authorization: `Bearer ${calendarAccessToken}`
-        }
+        headers: { Authorization: `Bearer ${calendarAccessToken}` }
       }
     );
 
-    if (!response.ok) {
-      const body = await response.text();
-      throw new Error(`Calendar API HTTP ${response.status}: ${body}`);
+    if (!calendarListResponse.ok) {
+      const body = await calendarListResponse.text();
+      throw new Error(`Calendar list API HTTP ${calendarListResponse.status}: ${body}`);
     }
 
-    const data = await response.json();
-    weekCalendarEvents = data.items || [];
+    const calendarListData = await calendarListResponse.json();
+    const calendars = (calendarListData.items || []).filter(calendar => {
+      // Match what the student normally sees in Google Calendar. Primary is always
+      // included; other calendars are included unless Google marks them selected:false.
+      return calendar.primary || calendar.selected !== false;
+    });
 
+    // Safety fallback in case Google returns an empty calendar list.
+    if (!calendars.length) {
+      calendars.push({ id: "primary", summary: "Primary", primary: true });
+    }
+
+    const params = new URLSearchParams({
+      timeMin: start.toISOString(),
+      timeMax: end.toISOString(),
+      singleEvents: "true",
+      orderBy: "startTime",
+      maxResults: "50"
+    });
+
+    const eventResults = await Promise.allSettled(
+      calendars.map(async calendar => {
+        const calendarId = encodeURIComponent(calendar.id || "primary");
+        const response = await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?${params}`,
+          {
+            headers: { Authorization: `Bearer ${calendarAccessToken}` }
+          }
+        );
+
+        if (!response.ok) {
+          const body = await response.text();
+          throw new Error(`${calendar.summary || calendar.id}: HTTP ${response.status}: ${body}`);
+        }
+
+        const data = await response.json();
+        return (data.items || []).map(event => ({
+          ...event,
+          _calendarId: calendar.id,
+          _calendarName: calendar.summary || "Calendar"
+        }));
+      })
+    );
+
+    const combinedEvents = [];
+    eventResults.forEach(result => {
+      if (result.status === "fulfilled") {
+        combinedEvents.push(...result.value);
+      } else {
+        console.warn("Could not load one calendar:", result.reason);
+      }
+    });
+
+    // Remove accidental duplicates and sort the combined week chronologically.
+    const seen = new Set();
+    weekCalendarEvents = combinedEvents
+      .filter(event => {
+        const key = [
+          event.iCalUID || event.id || "",
+          event?.start?.dateTime || event?.start?.date || "",
+          event.summary || ""
+        ].join("|");
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .sort((a, b) => {
+        const aTime = new Date(a?.start?.dateTime || a?.start?.date || 0).getTime();
+        const bTime = new Date(b?.start?.dateTime || b?.start?.date || 0).getTime();
+        return aTime - bTime;
+      });
+
+    console.log("Weekday calendars checked:", calendars.map(c => c.summary || c.id));
     console.log("Weekday calendar events:", weekCalendarEvents);
 
     if (scheduleBtn) {
@@ -543,7 +608,6 @@ async function loadWeekdayCalendar() {
     }
   }
 }
-
 
 function classroomDueDateToDate(courseWork) {
   const dueDate = courseWork?.dueDate;
