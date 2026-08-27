@@ -8,30 +8,32 @@
 
   <style id="branchMiniWeekBaseStyles">
     #branchMiniWeek{color:#fff}
-    #branchMiniWeek .branch-miniweek-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:12px}
-    #branchMiniWeek .branch-miniweek-label{font-size:11px;font-weight:900;letter-spacing:.14em;color:#8ef06c}
-    #branchMiniWeek .branch-miniweek-title{font-size:16px;font-weight:800;margin-top:2px}
+    #branchMiniWeek .branch-miniweek-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    #branchMiniWeek .branch-miniweek-label{font-size:12px;font-weight:900;letter-spacing:.14em;color:#8ef06c}
     #branchMiniWeek .branch-miniweek-open{font-size:12px;font-weight:800;color:#8ef06c;text-decoration:none;white-space:nowrap}
     #branchMiniWeek .branch-miniweek-open:hover{text-decoration:underline}
-    #branchMiniWeek .branch-miniweek-days{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
-    #branchMiniWeek .branch-miniweek-day{min-width:0;border:1px solid rgba(255,255,255,.13);border-radius:12px;background:rgba(255,255,255,.045);padding:8px 7px;min-height:90px}
-    #branchMiniWeek .branch-miniweek-day.is-today{border-color:rgba(142,240,108,.75);background:rgba(142,240,108,.10)}
-    #branchMiniWeek .branch-miniweek-dayname{font-size:10px;font-weight:900;letter-spacing:.08em;color:#bdb7c8;text-transform:uppercase}
-    #branchMiniWeek .branch-miniweek-date{font-size:18px;font-weight:900;line-height:1.1;margin:2px 0 7px}
-    #branchMiniWeek .branch-miniweek-events{display:grid;gap:5px}
-    #branchMiniWeek .branch-miniweek-event{display:block;border-radius:8px;padding:5px 6px;background:rgba(142,240,108,.14);color:#fff;text-decoration:none;overflow:hidden}
+    #branchMiniWeek .branch-miniweek-days{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px}
+    #branchMiniWeek .branch-miniweek-day{min-width:0;border:1px solid rgba(255,255,255,.13);border-radius:14px;background:rgba(255,255,255,.045);padding:10px;min-height:112px}
+    #branchMiniWeek .branch-miniweek-day.is-today{border-color:rgba(142,240,108,.85);background:rgba(142,240,108,.10)}
+    #branchMiniWeek .branch-miniweek-dayname{font-size:10px;font-weight:900;letter-spacing:.09em;color:#bdb7c8;text-transform:uppercase}
+    #branchMiniWeek .branch-miniweek-date{font-size:22px;font-weight:900;line-height:1.1;margin:2px 0 8px}
+    #branchMiniWeek .branch-miniweek-events{display:grid;gap:6px}
+    #branchMiniWeek .branch-miniweek-event{display:block;width:100%;border:0;text-align:left;border-radius:9px;padding:7px;background:rgba(142,240,108,.14);color:#fff;overflow:hidden;cursor:pointer;font:inherit}
     #branchMiniWeek .branch-miniweek-event.classroom{background:rgba(141,111,210,.30)}
     #branchMiniWeek .branch-miniweek-event:hover{filter:brightness(1.15)}
-    #branchMiniWeek .branch-miniweek-event-title{font-size:10px;font-weight:800;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    #branchMiniWeek .branch-miniweek-event-time{font-size:9px;color:#cfc9d9;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    #branchMiniWeek .branch-miniweek-empty{font-size:10px;color:#817b8d;padding-top:4px}
-    #branchMiniWeek .branch-miniweek-status{margin-top:10px;font-size:12px;color:#bdb7c8}
+    #branchMiniWeek .branch-miniweek-event-title{font-size:11px;font-weight:850;line-height:1.2;white-space:normal;overflow-wrap:anywhere}
+    #branchMiniWeek .branch-miniweek-event-time{font-size:9px;color:#cfc9d9;margin-top:3px;white-space:normal}
+    #branchMiniWeek .branch-miniweek-status{margin-top:9px;font-size:11px;color:#bdb7c8}
     #branchMiniWeek .branch-miniweek-connect{border:0;border-radius:999px;padding:7px 11px;background:#8ef06c;color:#10391d;font-weight:900;cursor:pointer}
-    #branchMiniWeek .branch-miniweek-loading{grid-column:1/-1;padding:14px 0;color:#bdb7c8;font-size:12px}
+    #branchMiniWeek .branch-miniweek-loading{grid-column:1/-1;padding:12px 0;color:#bdb7c8;font-size:12px}
+    #branchMiniWeek .branch-miniweek-noitems{padding:12px 0;color:#bdb7c8;font-size:12px}
+    #branchClassroomSummary{margin-top:12px;padding-top:11px;border-top:1px solid rgba(255,255,255,.11);display:flex;align-items:center;justify-content:space-between;gap:12px}
+    #branchClassroomSummary .branch-classroom-summary-title{font-size:11px;font-weight:900;letter-spacing:.12em;color:#8ef06c;text-transform:uppercase}
+    #branchClassroomSummary .branch-classroom-summary-text{font-size:11px;color:#d2ccd9;margin-top:3px}
+    #branchClassroomSummary .branch-classroom-summary-link{font-size:11px;font-weight:850;color:#8ef06c;text-decoration:none;white-space:nowrap}
     @media(max-width:720px){
-      #branchMiniWeek .branch-miniweek-days{grid-template-columns:1fr}
-      #branchMiniWeek .branch-miniweek-day{display:grid;grid-template-columns:48px 1fr;min-height:0;gap:8px}
-      #branchMiniWeek .branch-miniweek-date{margin:1px 0 0}
+      #branchMiniWeek .branch-miniweek-days{grid-template-columns:1fr 1fr}
+      #branchClassroomSummary{align-items:flex-start;flex-direction:column}
     }
   </style>
 </head>
@@ -100,16 +102,20 @@
       <section class="panel reminders weekly-agenda" id="weeklyAgendaPanel">
         <div id="branchMiniWeek">
           <div class="branch-miniweek-toolbar">
-            <div>
-              <div class="branch-miniweek-label">THIS WEEK</div>
-              <div class="branch-miniweek-title">Monday – Friday</div>
-            </div>
+            <div class="branch-miniweek-label">THIS WEEK</div>
             <a class="branch-miniweek-open" href="https://calendar.google.com/calendar/u/0/r/week" target="_blank" rel="noopener noreferrer">Open Calendar ↗</a>
           </div>
           <div class="branch-miniweek-days" id="branchMiniWeekDays">
             <div class="branch-miniweek-loading">Loading school week…</div>
           </div>
           <div class="branch-miniweek-status" id="branchMiniWeekStatus">Loading live schedule…</div>
+          <div id="branchClassroomSummary">
+            <div>
+              <div class="branch-classroom-summary-title">Classroom</div>
+              <div class="branch-classroom-summary-text" id="branchClassroomSummaryText">Loading assignments…</div>
+            </div>
+            <a class="branch-classroom-summary-link" id="branchClassroomSummaryLink" href="https://classroom.google.com/">View assignments ›</a>
+          </div>
         </div>
       </section>
     </section>
