@@ -12,6 +12,6 @@ window.PORTAL_CONFIG = {
   maxAnnouncements: 3,
 
   // Future web OAuth configuration.
-  googleClientId: "",
+  googleClientId: "503853945460-kvc0dcjebfjj9ib80ht88jhsaq7paecr.apps.googleusercontent.com",
   allowedDomain: "thebranchschool.org"
 };
