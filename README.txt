@@ -1,13 +1,24 @@
-The Branch School Student Portal — Web Prototype
+THE BRANCH SCHOOL STUDENT PORTAL — GITHUB READY
 
-This version is a normal website, not a Chrome extension.
+This package preserves the exact v17 dashboard layout and styling from the Chrome extension.
 
-Benefits:
-- Dashboard design changes are instant after you update the hosted files.
-- Announcements can update from a published Google Sheet.
-- Google Calendar can be connected using one Google OAuth Web Client ID.
-- No Chrome Web Store review is required for dashboard changes.
+UPLOAD TO GITHUB
+Upload these items to the ROOT of the repository:
+- index.html
+- styles.css
+- app.js
+- config.js
+- assets/  (folder)
 
-Host this folder on GitHub Pages, Cloudflare Pages, Netlify, or any school web server.
+The assets folder must contain:
+- bear-header.png
+- portal-badge.png
 
-Then in Google Admin you can set it as a managed startup page. If you still want EVERY new tab to show it, use a tiny New Tab redirect extension whose only job is to open this hosted page.
+WHAT CHANGED FROM THE EXTENSION
+- newtab.html was renamed to index.html.
+- newtab.js was renamed to app.js.
+- Chrome-only chrome.identity code was removed so the page runs normally on GitHub Pages.
+- Student Info is ready for Google web OAuth, which we will wire next.
+- Announcements Google Sheet logic is preserved.
+
+DO NOT upload manifest.json for the website version.

@@ -1,63 +1,138 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>The Branch School Student Portal</title>
-<link rel="stylesheet" href="styles.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>The Branch School Student Portal</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<main class="dashboard">
-  <section class="left">
-    <div class="brand"><b>THE BRANCH SCHOOL</b><span>STUDENT PORTAL</span></div>
-    <div class="time"><strong id="clock">--:--</strong><span id="date">Today</span></div>
-    <form class="search" action="https://www.google.com/search">
-      <input name="q" placeholder="Search the web"><button>G</button>
-    </form>
-    <section class="panel">
-      <h3>MY SHORTCUTS</h3>
-      <div class="grid">
-        <a href="https://drive.google.com/"><img src="https://www.google.com/s2/favicons?domain=drive.google.com&sz=128"><span>Google Drive</span></a>
-        <a href="https://classroom.google.com/"><img src="https://www.google.com/s2/favicons?domain=classroom.google.com&sz=128"><span>Classroom</span></a>
-        <a href="https://mail.google.com/"><img src="https://www.google.com/s2/favicons?domain=mail.google.com&sz=128"><span>Gmail</span></a>
-        <a href="https://www.ixl.com/"><img src="https://www.google.com/s2/favicons?domain=ixl.com&sz=128"><span>IXL</span></a>
-        <a href="https://connected.mcgraw-hill.com/"><img src="https://www.google.com/s2/favicons?domain=connected.mcgraw-hill.com&sz=128"><span>Everyday Math</span></a>
-        <a href="https://test.mapnwea.org/"><img src="https://www.google.com/s2/favicons?domain=nwea.org&sz=128"><span>NWEA MAP</span></a>
+  <div class="left-stripes"></div>
+  <div class="right-stripes"></div>
+
+  <div class="pawmark paw-left-big" aria-hidden="true">
+    <i class="toe t1"></i><i class="toe t2"></i><i class="toe t3"></i><i class="toe t4"></i><i class="pad"></i>
+  </div>
+  <div class="pawmark paw-right-top" aria-hidden="true">
+    <i class="toe t1"></i><i class="toe t2"></i><i class="toe t3"></i><i class="toe t4"></i><i class="pad"></i>
+  </div>
+
+  <main class="dashboard">
+    <section class="left-column">
+      <header class="brand-head">
+        <img src="assets/bear-header.png" class="header-bear" alt="">
+        <div>
+          <div class="school">THE BRANCH SCHOOL</div>
+          <div class="portal">STUDENT PORTAL</div>
+        </div>
+      </header>
+
+      <div class="time-card">
+        <strong id="clock">--:--</strong>
+        <span id="date">Today</span>
       </div>
-    </section>
-    <section class="panel today">
-      <h3>TODAY</h3>
-      <a href="https://calendar.google.com/calendar/u/0/r/day">Calendar <b>View schedule</b></a>
-      <a href="https://classroom.google.com/">Classroom <b>Check assignments</b></a>
-    </section>
-  </section>
 
-  <section class="center">
-    <img src="assets/portal-badge.png" class="badge">
-    <div class="values"><span>✓ <b>BE RESPONSIBLE</b></span><span>◆ <b>BE RESPECTFUL</b></span><span>♥ <b>BE SAFE</b></span></div>
-    <blockquote>“Excellence is not an act, but a habit.” <small>— Aristotle</small></blockquote>
-  </section>
+      <form class="search" action="https://www.google.com/search" method="get">
+        <span class="search-icon">⌕</span>
+        <input name="q" type="search" autocomplete="off" autofocus placeholder="Search the web">
+        <button type="submit">G</button>
+      </form>
 
-  <aside class="right">
-    <section class="panel student">
-      <h3>STUDENT INFO</h3>
-      <div class="studentrow"><div class="avatar">S</div><div><b>Student</b><span>Google sign-in ready to configure</span><small>The Branch School</small></div></div>
-      <button id="signin">Connect Google Account</button>
+      <section class="panel shortcuts">
+        <div class="panel-title">MY SHORTCUTS</div>
+        <div class="shortcut-grid">
+          <a href="https://drive.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=drive.google.com&sz=128" alt="">
+            <b>Google Drive</b>
+          </a>
+          <a href="https://classroom.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=classroom.google.com&sz=128" alt="">
+            <b>Google Classroom</b>
+          </a>
+          <a href="https://mail.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=mail.google.com&sz=128" alt="">
+            <b>Gmail</b>
+          </a>
+          <a href="https://www.ixl.com/">
+            <img src="https://www.google.com/s2/favicons?domain=ixl.com&sz=128" alt="">
+            <b>IXL</b>
+          </a>
+          <a href="https://connected.mcgraw-hill.com/">
+            <img src="https://www.google.com/s2/favicons?domain=connected.mcgraw-hill.com&sz=128" alt="">
+            <b>Everyday Math</b>
+          </a>
+          <a href="https://test.mapnwea.org/">
+            <img src="https://www.google.com/s2/favicons?domain=nwea.org&sz=128" alt="">
+            <b>NWEA MAP</b>
+          </a>
+        </div>
+      </section>
+
+      <section class="panel reminders">
+        <div class="panel-title">TODAY</div>
+        <div class="reminder-line"><span>Calendar</span><a href="https://calendar.google.com/calendar/u/0/r/day">View today's schedule</a></div>
+        <div class="reminder-line"><span>Classroom</span><a href="https://classroom.google.com/">Check assignments</a></div>
+      </section>
     </section>
-    <section class="panel announcements">
-      <div class="head"><h3>ANNOUNCEMENTS</h3><span>LIVE</span></div>
-      <div id="announcements">Add the published Google Sheet CSV URL in config.js.</div>
+
+    <section class="center-column">
+      <div class="badge-stage">
+        <img src="assets/portal-badge.png" class="portal-badge" alt="The Branch School Student Portal">
+      </div>
+
+      <section class="expectations-main">
+        <div><span class="symbol shield">✓</span><strong>BE RESPONSIBLE</strong></div>
+        <div><span class="symbol handshake">◆</span><strong>BE RESPECTFUL</strong></div>
+        <div><span class="symbol heart">♥</span><strong>BE SAFE</strong></div>
+      </section>
+
+      <blockquote>
+        “Excellence is not an act, but a habit.”
+        <small>— Aristotle</small>
+      </blockquote>
     </section>
-    <section class="panel quick">
-      <h3>QUICK LINKS</h3>
-      <a href="https://docs.google.com/">Google Docs ›</a>
-      <a href="https://slides.google.com/">Google Slides ›</a>
-      <a href="https://sheets.google.com/">Google Sheets ›</a>
-      <a href="https://calendar.google.com/calendar/u/0/r/day">Google Calendar ›</a>
-    </section>
-  </aside>
-</main>
-<script src="config.js"></script>
-<script src="app.js"></script>
+
+    <aside class="right-column">
+      <section class="panel student-card">
+        <div class="panel-title">STUDENT INFO</div>
+        <div class="student-main">
+          <div class="avatar" id="avatar">S</div>
+          <div>
+            <h3 id="studentName">Student</h3>
+            <span id="studentEmail">Signed in to Chrome</span>
+            <small>The Branch School</small>
+          </div>
+        </div>
+        <div class="student-status">
+          <span>School account</span>
+          <b id="accountStatus">Checking…</b>
+        </div>
+        <a class="schedule-btn" href="https://calendar.google.com/calendar/u/0/r/day">View My Schedule ›</a>
+      </section>
+
+
+
+      <section class="panel announcements-card" id="announcementsCard">
+        <div class="panel-title-row">
+          <div class="panel-title">ANNOUNCEMENTS</div>
+          <span class="live-dot">LIVE</span>
+        </div>
+        <div id="announcementsList" class="announcements-list">
+          <div class="announcement-status">Checking for announcements…</div>
+        </div>
+      </section>
+
+      <section class="panel quick-links">
+        <div class="panel-title">QUICK LINKS</div>
+        <a href="https://docs.google.com/">Google Docs <span>›</span></a>
+        <a href="https://slides.google.com/">Google Slides <span>›</span></a>
+        <a href="https://sheets.google.com/">Google Sheets <span>›</span></a>
+        <a href="https://calendar.google.com/calendar/u/0/r/day">Google Calendar <span>›</span></a>
+      </section>
+    </aside>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
