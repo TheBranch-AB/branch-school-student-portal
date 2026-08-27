@@ -575,62 +575,54 @@ function ensureMiniWeekCalendar() {
   let host = document.getElementById("branchMiniWeek");
   if (host) return host;
 
-  const calendarLine = document.querySelector('.reminder-line a[href*="calendar.google.com"]')?.closest('.reminder-line');
-  const classroomLine = document.querySelector('.reminder-line a[href*="classroom.google.com"]')?.closest('.reminder-line');
-  if (!calendarLine) return null;
+  // Backward-compatible fallback for an older HTML file. New HTML ships with
+  // #branchMiniWeek already present, but this keeps the dashboard functional
+  // if app.js gets deployed before the HTML update.
+  const remindersPanel = document.querySelector(".panel.reminders");
+  if (!remindersPanel) return null;
 
-  const container = calendarLine.parentElement;
-  if (!container) return null;
-
-  // Keep the original links in the DOM as fallbacks, but replace the two text rows visually
-  // with a compact Monday-Friday schedule.
-  calendarLine.style.display = "none";
-  if (classroomLine) classroomLine.style.display = "none";
-
-  host = document.createElement("div");
-  host.id = "branchMiniWeek";
-  host.innerHTML = `
-    <div class="branch-miniweek-toolbar">
-      <div>
-        <div class="branch-miniweek-label">THIS WEEK</div>
-        <div class="branch-miniweek-title">Monday – Friday</div>
+  remindersPanel.innerHTML = `
+    <div id="branchMiniWeek">
+      <div class="branch-miniweek-toolbar">
+        <div>
+          <div class="branch-miniweek-label">THIS WEEK</div>
+          <div class="branch-miniweek-title">Monday – Friday</div>
+        </div>
+        <a class="branch-miniweek-open" href="https://calendar.google.com/calendar/u/0/r/week" target="_blank" rel="noopener noreferrer">Open Calendar ↗</a>
       </div>
-      <a class="branch-miniweek-open" href="https://calendar.google.com/calendar/u/0/r/week" target="_blank" rel="noopener noreferrer">Open Calendar ↗</a>
-    </div>
-    <div class="branch-miniweek-days" id="branchMiniWeekDays"></div>
-    <div class="branch-miniweek-status" id="branchMiniWeekStatus"></div>`;
+      <div class="branch-miniweek-days" id="branchMiniWeekDays"></div>
+      <div class="branch-miniweek-status" id="branchMiniWeekStatus">Loading live schedule…</div>
+    </div>`;
 
-  const style = document.createElement("style");
-  style.id = "branchMiniWeekStyles";
-  style.textContent = `
-    #branchMiniWeek{margin-top:8px;color:#fff}
-    #branchMiniWeek .branch-miniweek-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:12px}
-    #branchMiniWeek .branch-miniweek-label{font-size:10px;font-weight:900;letter-spacing:.14em;color:#8ef06c}
-    #branchMiniWeek .branch-miniweek-title{font-size:15px;font-weight:800;margin-top:2px}
-    #branchMiniWeek .branch-miniweek-open{font-size:12px;font-weight:800;color:#8ef06c;text-decoration:none;white-space:nowrap}
-    #branchMiniWeek .branch-miniweek-open:hover{text-decoration:underline}
-    #branchMiniWeek .branch-miniweek-days{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
-    #branchMiniWeek .branch-miniweek-day{min-width:0;border:1px solid rgba(255,255,255,.13);border-radius:12px;background:rgba(255,255,255,.045);padding:8px 7px;min-height:88px}
-    #branchMiniWeek .branch-miniweek-day.is-today{border-color:rgba(142,240,108,.68);background:rgba(142,240,108,.08)}
-    #branchMiniWeek .branch-miniweek-dayname{font-size:10px;font-weight:900;letter-spacing:.08em;color:#bdb7c8;text-transform:uppercase}
-    #branchMiniWeek .branch-miniweek-date{font-size:18px;font-weight:900;line-height:1.1;margin:2px 0 7px}
-    #branchMiniWeek .branch-miniweek-events{display:grid;gap:5px}
-    #branchMiniWeek .branch-miniweek-event{display:block;border-radius:8px;padding:5px 6px;background:rgba(142,240,108,.12);color:#fff;text-decoration:none;overflow:hidden}
-    #branchMiniWeek .branch-miniweek-event.classroom{background:rgba(141,111,210,.22)}
-    #branchMiniWeek .branch-miniweek-event:hover{filter:brightness(1.15)}
-    #branchMiniWeek .branch-miniweek-event-title{font-size:10px;font-weight:800;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    #branchMiniWeek .branch-miniweek-event-time{font-size:9px;color:#cfc9d9;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    #branchMiniWeek .branch-miniweek-empty{font-size:10px;color:#817b8d;padding-top:4px}
-    #branchMiniWeek .branch-miniweek-status{margin-top:10px;font-size:12px;color:#bdb7c8}
-    #branchMiniWeek .branch-miniweek-connect{border:0;border-radius:999px;padding:7px 11px;background:#8ef06c;color:#10391d;font-weight:900;cursor:pointer}
-    @media(max-width:720px){
-      #branchMiniWeek .branch-miniweek-days{grid-template-columns:1fr}
-      #branchMiniWeek .branch-miniweek-day{display:grid;grid-template-columns:48px 1fr;min-height:0;gap:8px}
-      #branchMiniWeek .branch-miniweek-date{margin:1px 0 0}
-    }`;
+  host = document.getElementById("branchMiniWeek");
 
-  if (!document.getElementById(style.id)) document.head.appendChild(style);
-  container.insertBefore(host, calendarLine);
+  if (!document.getElementById("branchMiniWeekStyles") && !document.getElementById("branchMiniWeekBaseStyles")) {
+    const style = document.createElement("style");
+    style.id = "branchMiniWeekStyles";
+    style.textContent = `
+      #branchMiniWeek{color:#fff}
+      #branchMiniWeek .branch-miniweek-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:12px}
+      #branchMiniWeek .branch-miniweek-label{font-size:11px;font-weight:900;letter-spacing:.14em;color:#8ef06c}
+      #branchMiniWeek .branch-miniweek-title{font-size:16px;font-weight:800;margin-top:2px}
+      #branchMiniWeek .branch-miniweek-open{font-size:12px;font-weight:800;color:#8ef06c;text-decoration:none;white-space:nowrap}
+      #branchMiniWeek .branch-miniweek-days{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
+      #branchMiniWeek .branch-miniweek-day{min-width:0;border:1px solid rgba(255,255,255,.13);border-radius:12px;background:rgba(255,255,255,.045);padding:8px 7px;min-height:90px}
+      #branchMiniWeek .branch-miniweek-day.is-today{border-color:rgba(142,240,108,.75);background:rgba(142,240,108,.10)}
+      #branchMiniWeek .branch-miniweek-dayname{font-size:10px;font-weight:900;letter-spacing:.08em;color:#bdb7c8;text-transform:uppercase}
+      #branchMiniWeek .branch-miniweek-date{font-size:18px;font-weight:900;line-height:1.1;margin:2px 0 7px}
+      #branchMiniWeek .branch-miniweek-events{display:grid;gap:5px}
+      #branchMiniWeek .branch-miniweek-event{display:block;border-radius:8px;padding:5px 6px;background:rgba(142,240,108,.14);color:#fff;text-decoration:none;overflow:hidden}
+      #branchMiniWeek .branch-miniweek-event.classroom{background:rgba(141,111,210,.30)}
+      #branchMiniWeek .branch-miniweek-event-title{font-size:10px;font-weight:800;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      #branchMiniWeek .branch-miniweek-event-time{font-size:9px;color:#cfc9d9;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      #branchMiniWeek .branch-miniweek-empty{font-size:10px;color:#817b8d;padding-top:4px}
+      #branchMiniWeek .branch-miniweek-status{margin-top:10px;font-size:12px;color:#bdb7c8}
+      #branchMiniWeek .branch-miniweek-connect{border:0;border-radius:999px;padding:7px 11px;background:#8ef06c;color:#10391d;font-weight:900;cursor:pointer}
+      @media(max-width:720px){#branchMiniWeek .branch-miniweek-days{grid-template-columns:1fr}}
+    `;
+    document.head.appendChild(style);
+  }
+
   return host;
 }
 
@@ -728,19 +720,12 @@ function renderMiniWeekCalendar() {
 function updateWeeklyScheduleLabels() {
   const items = getWeekScheduleItems();
   const scheduleBtn = document.querySelector(".schedule-btn");
-  const todayCalendarLink = document.querySelector('.reminder-line a[href*="calendar.google.com"]');
 
   if (scheduleBtn) {
     scheduleBtn.textContent = items.length === 1
       ? "1 Item This Week ›"
       : `${items.length} Items This Week ›`;
     scheduleBtn.dataset.calendarLoaded = "true";
-  }
-
-  if (todayCalendarLink) {
-    todayCalendarLink.textContent = items.length === 1
-      ? "1 item this week"
-      : `${items.length} items this week`;
   }
 
   renderMiniWeekCalendar();
