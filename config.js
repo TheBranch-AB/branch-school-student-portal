@@ -13,5 +13,5 @@ window.PORTAL_CONFIG = {
 
   // Future web OAuth configuration.
   googleClientId: "503853945460-kvc0dcjebfjj9ib80ht88jhsaq7paecr.apps.googleusercontent.com",
-  allowedDomain: "thebranchschool.org"
+  allowedDomain: "branchschool.org"
 };
