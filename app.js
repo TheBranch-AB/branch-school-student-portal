@@ -297,7 +297,7 @@ initializeGoogleSignIn();
 let calendarTokenClient = null;
 let calendarAccessToken = "";
 let classroomAccessToken = "";
-let todaysCalendarEvents = [];
+let weekCalendarEvents = [];
 let classroomAssignments = [];
 
 function initializeCalendarAuth() {
@@ -327,7 +327,7 @@ function initializeCalendarAuth() {
       classroomAccessToken = tokenResponse.access_token || "";
 
       await Promise.allSettled([
-        loadTodaysCalendar(),
+        loadWeekdayCalendar(),
         loadClassroomAssignments()
       ]);
     }
@@ -365,10 +365,10 @@ function ensureCalendarEventModal() {
     <div class="branch-calendar-backdrop" data-calendar-close></div>
     <section class="branch-calendar-dialog" role="dialog" aria-modal="true" aria-labelledby="branchCalendarEventTitle">
       <button class="branch-calendar-close" type="button" aria-label="Close calendar events" data-calendar-close>×</button>
-      <div class="branch-calendar-kicker">Today's Schedule</div>
+      <div class="branch-calendar-kicker">Monday – Friday</div>
       <h2 id="branchCalendarEventTitle">Calendar Events</h2>
       <div id="branchCalendarEventList" class="branch-calendar-event-list"></div>
-      <a class="branch-calendar-open-google" href="https://calendar.google.com/calendar/u/0/r/day" target="_blank" rel="noopener noreferrer">Open Google Calendar ↗</a>
+      <a class="branch-calendar-open-google" href="https://calendar.google.com/calendar/u/0/r/week" target="_blank" rel="noopener noreferrer">Open Google Calendar ↗</a>
     </section>`;
 
   const style = document.createElement("style");
@@ -383,6 +383,7 @@ function ensureCalendarEventModal() {
     #branchCalendarEventModal h2{margin:0 42px 18px 0;font-size:28px}
     #branchCalendarEventModal .branch-calendar-event-list{display:grid;gap:10px}
     #branchCalendarEventModal .branch-calendar-event{padding:14px 16px;border:1px solid rgba(84,64,121,.16);border-radius:16px;background:#f8f6fb}
+    #branchCalendarEventModal .branch-calendar-event-date{font-size:12px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:#55476f;margin-bottom:2px}
     #branchCalendarEventModal .branch-calendar-event-time{font-size:13px;font-weight:800;color:#7258a5;margin-bottom:4px}
     #branchCalendarEventModal .branch-calendar-event-name{font-size:17px;font-weight:800;color:#241b3b}
     #branchCalendarEventModal .branch-calendar-event-meta{font-size:13px;color:#6a6274;margin-top:5px;white-space:pre-line}
@@ -411,7 +412,7 @@ function closeCalendarEventModal() {
   modal.setAttribute("aria-hidden", "true");
 }
 
-function showTodaysCalendarEvents() {
+function showWeekdayCalendarEvents() {
   const modal = ensureCalendarEventModal();
   const list = modal.querySelector("#branchCalendarEventList");
   const title = modal.querySelector("#branchCalendarEventTitle");
@@ -419,18 +420,25 @@ function showTodaysCalendarEvents() {
   if (!list || !title) return;
 
   title.textContent =
-    todaysCalendarEvents.length === 1
-      ? "1 Event Today"
-      : `${todaysCalendarEvents.length} Events Today`;
+    weekCalendarEvents.length === 1
+      ? "1 Event This Week"
+      : `${weekCalendarEvents.length} Events This Week`;
 
   list.innerHTML = "";
 
-  if (!todaysCalendarEvents.length) {
-    list.innerHTML = '<div class="branch-calendar-empty">No events are scheduled for today.</div>';
+  if (!weekCalendarEvents.length) {
+    list.innerHTML = '<div class="branch-calendar-empty">No events are scheduled Monday through Friday this week.</div>';
   } else {
-    todaysCalendarEvents.forEach(event => {
+    weekCalendarEvents.forEach(event => {
       const item = document.createElement("div");
       item.className = "branch-calendar-event";
+
+      const date = document.createElement("div");
+      date.className = "branch-calendar-event-date";
+      const eventStart = new Date(event?.start?.dateTime || event?.start?.date);
+      date.textContent = Number.isNaN(eventStart.getTime())
+        ? ""
+        : eventStart.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
 
       const time = document.createElement("div");
       time.className = "branch-calendar-event-time";
@@ -440,6 +448,7 @@ function showTodaysCalendarEvents() {
       name.className = "branch-calendar-event-name";
       name.textContent = event.summary || "Untitled event";
 
+      if (date.textContent) item.appendChild(date);
       item.appendChild(time);
       item.appendChild(name);
 
@@ -459,21 +468,29 @@ function showTodaysCalendarEvents() {
   modal.setAttribute("aria-hidden", "false");
 }
 
-async function loadTodaysCalendar() {
+async function loadWeekdayCalendar() {
   if (!calendarAccessToken) return;
 
-  const start = new Date();
+  // Current school week: Monday 12:00 AM through Saturday 12:00 AM.
+  // Using Saturday as the exclusive end keeps Saturday/Sunday out entirely.
+  const now = new Date();
+  const day = now.getDay();
+  const daysFromMonday = day === 0 ? 6 : day - 1;
+
+  const start = new Date(now);
+  start.setDate(now.getDate() - daysFromMonday);
   start.setHours(0, 0, 0, 0);
 
-  const end = new Date();
-  end.setHours(23, 59, 59, 999);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 5);
+  end.setHours(0, 0, 0, 0);
 
   const params = new URLSearchParams({
     timeMin: start.toISOString(),
     timeMax: end.toISOString(),
     singleEvents: "true",
     orderBy: "startTime",
-    maxResults: "10"
+    maxResults: "50"
   });
 
   const scheduleBtn = document.querySelector(".schedule-btn");
@@ -496,15 +513,15 @@ async function loadTodaysCalendar() {
     }
 
     const data = await response.json();
-    todaysCalendarEvents = data.items || [];
+    weekCalendarEvents = data.items || [];
 
-    console.log("Today's calendar events:", todaysCalendarEvents);
+    console.log("Weekday calendar events:", weekCalendarEvents);
 
     if (scheduleBtn) {
       scheduleBtn.textContent =
-        todaysCalendarEvents.length === 1
-          ? "1 Event Today ›"
-          : `${todaysCalendarEvents.length} Events Today ›`;
+        weekCalendarEvents.length === 1
+          ? "1 Event This Week ›"
+          : `${weekCalendarEvents.length} Events This Week ›`;
       scheduleBtn.dataset.calendarLoaded = "true";
     }
 
@@ -513,13 +530,13 @@ async function loadTodaysCalendar() {
 
     if (todayCalendarLink) {
       todayCalendarLink.textContent =
-        todaysCalendarEvents.length === 1
-          ? "1 event today"
-          : `${todaysCalendarEvents.length} events today`;
+        weekCalendarEvents.length === 1
+          ? "1 event this week"
+          : `${weekCalendarEvents.length} events this week`;
     }
   } catch (error) {
     console.error("Calendar loading failed:", error);
-    todaysCalendarEvents = [];
+    weekCalendarEvents = [];
     if (scheduleBtn) {
       scheduleBtn.textContent = "Calendar unavailable";
       scheduleBtn.dataset.calendarLoaded = "false";
@@ -793,12 +810,12 @@ function handleCalendarButtonClick(event) {
   // Once events are loaded, clicking the count opens the event list and NEVER
   // starts another OAuth popup.
   if (scheduleBtn?.dataset.calendarLoaded === "true" || calendarAccessToken) {
-    showTodaysCalendarEvents();
+    showWeekdayCalendarEvents();
     return;
   }
 
   // First-use fallback: request Calendar permission only if we truly do not
-  // have a token yet. The OAuth callback will load today's events afterward.
+  // have a token yet. The OAuth callback will load this week's weekday events afterward.
   requestCalendarAccess();
 }
 
@@ -808,7 +825,7 @@ function wireCalendarButton() {
 
   scheduleBtn.removeAttribute("href");
   scheduleBtn.setAttribute("role", "button");
-  scheduleBtn.setAttribute("aria-label", "Show today's calendar events");
+  scheduleBtn.setAttribute("aria-label", "Show this week's Monday through Friday calendar events");
   scheduleBtn.style.cursor = "pointer";
   scheduleBtn.addEventListener("click", handleCalendarButtonClick);
 }
