@@ -79,8 +79,10 @@
       top: 50%;
       transform: translate(-50%, -44%) scale(.97);
       width: min(390px, 92%);
-      max-height: 360px;
+      max-height: 420px;
       overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
       padding: 18px;
       border-radius: 18px;
       background: rgba(24, 15, 54, .97);
@@ -100,6 +102,30 @@
       visibility: visible;
       pointer-events: auto;
       transform: translate(-50%, -50%) scale(1);
+    }
+
+
+    #branchAssignmentHover::-webkit-scrollbar {
+      width: 7px;
+    }
+    #branchAssignmentHover::-webkit-scrollbar-track {
+      background: rgba(255,255,255,.04);
+      border-radius: 999px;
+    }
+    #branchAssignmentHover::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,.22);
+      border-radius: 999px;
+    }
+    #branchAssignmentHover::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,.34);
+    }
+
+    #branchAssignmentHoverList {
+      max-height: 330px;
+      overflow-y: auto;
+      padding-right: 4px;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
     }
 
     .branch-assignment-hover-title {
@@ -330,7 +356,7 @@
 
         if (assignmentCards.length) {
           list.innerHTML = "";
-          assignmentCards.slice(0, 6).forEach(function (card) {
+          assignmentCards.slice(0, 20).forEach(function (card) {
             const clone = document.createElement("div");
             clone.className = "branch-assignment-hover-item";
             clone.innerHTML = card.innerHTML;
