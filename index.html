@@ -69,102 +69,186 @@
       flex:1;
       min-width:0
     }
-  
-    /* Center-logo hover assignment preview */
-    .badge-stage { position: relative; }
+
+    /* Center-logo hover assignment preview — fills the badge circle */
+    .badge-stage {
+      position: relative;
+    }
 
     #branchAssignmentHover {
       position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -44%) scale(.97);
-      width: min(390px, 92%);
-      max-height: 420px;
-      overflow-y: auto;
-      overscroll-behavior: contain;
-      scrollbar-width: thin;
-      padding: 18px;
-      border-radius: 18px;
-      background: rgba(24, 15, 54, .97);
-      border: 1px solid rgba(124, 255, 92, .28);
-      box-shadow: 0 18px 55px rgba(0,0,0,.42);
+      inset: 5.5%;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 35%, rgba(44, 31, 83, .97), rgba(15, 10, 36, .985) 68%);
+      border: 1px solid rgba(142, 240, 108, .32);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.035), 0 18px 60px rgba(0,0,0,.34);
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
+      transform: scale(.965);
       transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
       z-index: 20;
-      backdrop-filter: blur(14px);
+      overflow: hidden;
+      color: #fff;
     }
 
     .badge-stage:hover #branchAssignmentHover,
-    .badge-stage:focus-within #branchAssignmentHover {
+    .badge-stage:focus-within #branchAssignmentHover,
+    #branchAssignmentHover:hover {
       opacity: 1;
       visibility: visible;
       pointer-events: auto;
-      transform: translate(-50%, -50%) scale(1);
+      transform: scale(1);
     }
 
-
-    #branchAssignmentHover::-webkit-scrollbar {
-      width: 7px;
-    }
-    #branchAssignmentHover::-webkit-scrollbar-track {
-      background: rgba(255,255,255,.04);
-      border-radius: 999px;
-    }
-    #branchAssignmentHover::-webkit-scrollbar-thumb {
-      background: rgba(255,255,255,.22);
-      border-radius: 999px;
-    }
-    #branchAssignmentHover::-webkit-scrollbar-thumb:hover {
-      background: rgba(255,255,255,.34);
+    .branch-assignment-hover-shell {
+      position: absolute;
+      inset: 12% 10% 10%;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
     }
 
-    #branchAssignmentHoverList {
-      max-height: 330px;
-      overflow-y: auto;
-      padding-right: 4px;
-      overscroll-behavior: contain;
-      scrollbar-width: thin;
+    .branch-assignment-hover-header {
+      flex: 0 0 auto;
+      padding: 2px 10px 12px;
+      text-align: center;
     }
 
     .branch-assignment-hover-title {
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: .08em;
-      color: #8cff6a;
-      margin-bottom: 12px;
+      font-size: clamp(13px, 1.25vw, 21px);
+      font-weight: 900;
+      letter-spacing: .09em;
+      color: #8ef06c;
+      line-height: 1.15;
+    }
+
+    .branch-assignment-hover-subtitle {
+      margin-top: 4px;
+      font-size: clamp(10px, .82vw, 13px);
+      font-weight: 700;
+      color: rgba(255,255,255,.68);
+    }
+
+    #branchAssignmentHoverList {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,.34) transparent;
+      padding: 0 7px 4px 2px;
+    }
+
+    #branchAssignmentHoverList::-webkit-scrollbar {
+      width: 7px;
+    }
+    #branchAssignmentHoverList::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    #branchAssignmentHoverList::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,.28);
+      border-radius: 999px;
+    }
+    #branchAssignmentHoverList::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,.42);
     }
 
     .branch-assignment-hover-item {
-      display: block;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px 12px;
       width: 100%;
-      text-align: left;
-      padding: 11px 12px;
-      margin-top: 8px;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      margin-bottom: 7px;
       border: 1px solid rgba(255,255,255,.10);
-      border-radius: 12px;
+      border-radius: 13px;
       background: rgba(255,255,255,.055);
-      color: inherit;
+      color: #fff;
       text-decoration: none;
+      transition: background .14s ease, border-color .14s ease;
     }
 
-    .branch-assignment-hover-item b {
-      display: block;
-      margin-bottom: 4px;
+    .branch-assignment-hover-item:hover {
+      background: rgba(255,255,255,.10);
+      border-color: rgba(142,240,108,.28);
     }
 
-    .branch-assignment-hover-item span {
+    .branch-assignment-hover-main {
+      min-width: 0;
+    }
+
+    .branch-assignment-hover-name {
       display: block;
-      font-size: 12px;
-      opacity: .76;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: clamp(11px, .92vw, 14px);
+      font-weight: 850;
+      line-height: 1.2;
+    }
+
+    .branch-assignment-hover-course {
+      display: block;
+      margin-top: 3px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: clamp(9px, .72vw, 11px);
+      font-weight: 650;
+      color: rgba(255,255,255,.62);
+    }
+
+    .branch-assignment-hover-due {
+      align-self: center;
+      max-width: 112px;
+      text-align: right;
+      font-size: clamp(9px, .72vw, 11px);
+      font-weight: 850;
+      line-height: 1.15;
+      color: #9c8cff;
+    }
+
+    .branch-assignment-hover-due.today {
+      color: #ff707f;
+    }
+
+    .branch-assignment-hover-due.tomorrow {
+      color: #ffbf55;
     }
 
     .branch-assignment-hover-empty {
-      padding: 14px 4px 4px;
-      opacity: .75;
+      padding: 28px 18px;
+      text-align: center;
+      color: rgba(255,255,255,.70);
       font-size: 13px;
     }
+
+    .branch-assignment-hover-footer {
+      flex: 0 0 auto;
+      padding: 8px 0 1px;
+      text-align: center;
+    }
+
+    .branch-assignment-hover-footer a {
+      color: #8ef06c;
+      font-size: clamp(10px, .76vw, 12px);
+      font-weight: 850;
+      text-decoration: none;
+    }
+
+    .branch-assignment-hover-footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 900px) {
+      .branch-assignment-hover-shell { inset: 11% 8% 9%; }
+      .branch-assignment-hover-item { padding: 8px 10px; }
+      .branch-assignment-hover-due { max-width: 88px; }
+    }
+
 
   </style>
 </head>
@@ -255,9 +339,17 @@
       <div class="badge-stage">
         <img src="assets/portal-badge.png" class="portal-badge" alt="The Branch School Student Portal">
         <div id="branchAssignmentHover" aria-live="polite">
-          <div class="branch-assignment-hover-title">ASSIGNMENTS DUE</div>
-          <div id="branchAssignmentHoverList">
-            <div class="branch-assignment-hover-empty">Loading assignments…</div>
+          <div class="branch-assignment-hover-shell">
+            <div class="branch-assignment-hover-header">
+              <div class="branch-assignment-hover-title">ASSIGNMENTS DUE</div>
+              <div class="branch-assignment-hover-subtitle" id="branchAssignmentHoverSubtitle">Google Classroom</div>
+            </div>
+            <div id="branchAssignmentHoverList">
+              <div class="branch-assignment-hover-empty">Loading assignments…</div>
+            </div>
+            <div class="branch-assignment-hover-footer">
+              <a href="https://classroom.google.com/" target="_blank" rel="noopener noreferrer">View all in Google Classroom ↗</a>
+            </div>
           </div>
         </div>
       </div>
@@ -342,59 +434,6 @@
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="config.js"></script>
-  <script src="app.js?v=20260827-1613"></script>
-
-  <script>
-    (function () {
-      function refreshAssignmentHover() {
-        const list = document.getElementById("branchAssignmentHoverList");
-        if (!list) return;
-
-        const assignmentCards = Array.from(document.querySelectorAll(
-          '[data-branch-assignment], .branch-classroom-assignment, .classroom-assignment'
-        ));
-
-        if (assignmentCards.length) {
-          list.innerHTML = "";
-          assignmentCards.slice(0, 20).forEach(function (card) {
-            const clone = document.createElement("div");
-            clone.className = "branch-assignment-hover-item";
-            clone.innerHTML = card.innerHTML;
-            list.appendChild(clone);
-          });
-          return;
-        }
-
-        const summary = document.getElementById("branchClassroomSummaryText");
-        const summaryLink = document.getElementById("branchClassroomSummaryLink");
-        const text = (summary && summary.textContent || "").trim();
-
-        if (text && !/loading/i.test(text)) {
-          list.innerHTML = "";
-          const item = document.createElement("a");
-          item.className = "branch-assignment-hover-item";
-          item.href = (summaryLink && summaryLink.href) || "https://classroom.google.com/";
-          item.target = "_blank";
-          item.rel = "noopener noreferrer";
-          item.innerHTML = "<b>Google Classroom</b><span>" +
-            text.replace(/[&<>"']/g, function (c) {
-              return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
-            }) + "</span>";
-          list.appendChild(item);
-        }
-      }
-
-      window.addEventListener("load", function () {
-        refreshAssignmentHover();
-        const target = document.getElementById("branchClassroomSummary");
-        if (target) {
-          new MutationObserver(refreshAssignmentHover).observe(target, {
-            childList: true, subtree: true, characterData: true
-          });
-        }
-      });
-    })();
-  </script>
-
+  <script src="app.js?v=20260827-2013"></script>
 </body>
 </html>
