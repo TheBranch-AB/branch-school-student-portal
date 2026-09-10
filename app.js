@@ -14,7 +14,7 @@ updateDateTime();
 setInterval(updateDateTime,30000);
 
 function prettifyNameFromEmail(email){
-  if(!email) return "Student";
+  if(!email) return "Staff Member";
   const local=email.split("@")[0].replace(/[._-]+/g," ").trim();
   return local.split(" ").filter(Boolean)
     .map(p=>p.charAt(0).toUpperCase()+p.slice(1))
@@ -22,14 +22,19 @@ function prettifyNameFromEmail(email){
 }
 
 // Website version: Google identity will be populated after OAuth is connected.
-function setStudentInfo(name="Student", email="Google sign-in not connected yet"){
+function setStudentInfo(name="Staff Member", email="Google sign-in not connected yet"){
   document.getElementById("studentName").textContent = name;
   document.getElementById("studentEmail").textContent = email;
-  document.getElementById("avatar").textContent = (name || "S").charAt(0).toUpperCase();
+
+  const avatar = document.getElementById("avatar");
+  if (avatar && avatar.dataset.photoLoaded !== "true") {
+    avatar.textContent = (name || "S").charAt(0).toUpperCase();
+  }
+
   document.getElementById("accountStatus").textContent =
-    email && email.endsWith("@branchschool.org") ? "Branch account" : "Not connected";
+    email && email.toLowerCase().endsWith("@thebranchschool.org") ? "Branch staff" : "Not connected";
 }
-setStudentInfo("Student", "Waiting for Google sign-in...");
+setStudentInfo("Staff Member", "Waiting for Google sign-in...");
 
 function parseCsv(text){
   const rows=[];
@@ -94,10 +99,10 @@ function truthy(value){
 }
 
 function audienceMatches(value){
-  const target=(window.PORTAL_CONFIG?.studentAudience || "All").trim().toLowerCase();
+  const target=(window.PORTAL_CONFIG?.staffAudience || "All Staff").trim().toLowerCase();
   const raw=(value || "All").trim().toLowerCase();
 
-  if(raw === "" || raw === "all" || raw === "all students") return true;
+  if(raw === "" || raw === "all" || raw === "all students" || raw === "all staff" || raw === "staff") return true;
   if(target === "all") return false;
 
   return raw.split(/[;,|]/).map(x=>x.trim()).includes(target);
@@ -197,7 +202,7 @@ async function loadAnnouncements(){
   }
 }
 
-loadAnnouncements();
+// Announcements tile is now used for Afterschool; do not load announcement content here.
 
 
 function decodeGoogleCredential(token) {
@@ -216,32 +221,32 @@ function decodeGoogleCredential(token) {
 
 function saveSignedInUser(name, email) {
   localStorage.setItem(
-    "branchPortalUser",
+    "branchStaffDashboardUser",
     JSON.stringify({ name, email })
   );
 }
 
 function restoreSignedInUser() {
-  const savedUser = localStorage.getItem("branchPortalUser");
+  const savedUser = localStorage.getItem("branchStaffDashboardUser");
   if (!savedUser) return false;
 
   try {
     const user = JSON.parse(savedUser);
     const allowedDomain =
-      (window.PORTAL_CONFIG?.allowedDomain || "branchschool.org").toLowerCase();
+      (window.PORTAL_CONFIG?.allowedDomain || "thebranchschool.org").toLowerCase();
 
     if (!user?.email ||
         !user.email.toLowerCase().endsWith("@" + allowedDomain)) {
-      localStorage.removeItem("branchPortalUser");
+      localStorage.removeItem("branchStaffDashboardUser");
       return false;
     }
 
-    setStudentInfo(user.name || "Student", user.email);
-    document.getElementById("accountStatus").textContent = "Branch account";
+    setStudentInfo(user.name || "Staff Member", user.email);
+    document.getElementById("accountStatus").textContent = "Branch staff";
     return true;
   } catch (error) {
     console.warn("Could not restore saved student profile:", error);
-    localStorage.removeItem("branchPortalUser");
+    localStorage.removeItem("branchStaffDashboardUser");
     return false;
   }
 }
@@ -250,9 +255,9 @@ function handleGoogleSignIn(response) {
   try {
     const user = decodeGoogleCredential(response.credential);
     const email = user.email || "";
-    const name = user.name || "Student";
+    const name = user.name || "Staff Member";
     const allowedDomain =
-      (window.PORTAL_CONFIG?.allowedDomain || "branchschool.org").toLowerCase();
+      (window.PORTAL_CONFIG?.allowedDomain || "thebranchschool.org").toLowerCase();
 
     if (!email.toLowerCase().endsWith("@" + allowedDomain)) {
       document.getElementById("accountStatus").textContent =
@@ -261,7 +266,7 @@ function handleGoogleSignIn(response) {
     }
 
     setStudentInfo(name, email);
-    document.getElementById("accountStatus").textContent = "Branch account";
+    document.getElementById("accountStatus").textContent = "Branch staff";
     saveSignedInUser(name, email);
   } catch (error) {
     console.error("Google sign-in failed:", error);
@@ -320,8 +325,20 @@ let classroomAccessToken = "";
 let weekCalendarEvents = [];
 let classroomAssignments = [];
 
-const GOOGLE_DATA_SESSION_KEY = "branchPortalGoogleDataToken";
-const GOOGLE_DATA_LOCAL_KEY = "branchPortalGoogleDataTokenPersistent";
+// School Calendar + Microsoft 365 / Exchange data
+let schoolCalendarEvents = [];
+let schoolCalendarLoaded = false;
+let microsoftCalendarEvents = [];
+let microsoftAccount = null;
+let microsoftMsal = null;
+let microsoftCalendarConnected = false;
+
+const MICROSOFT_CLIENT_ID = "4b456154-31d4-458f-bbc0-6766a4bbe261";
+const MICROSOFT_TENANT_ID = "thebranchschool.org";
+const MICROSOFT_SCOPES = ["User.Read", "Calendars.Read", "Mail.Read"];
+
+const GOOGLE_DATA_SESSION_KEY = "branchStaffDashboardGoogleDataToken";
+const GOOGLE_DATA_LOCAL_KEY = "branchStaffDashboardGoogleDataTokenPersistent";
 let automaticGoogleDataAttempted = false;
 
 function saveGoogleDataToken(tokenResponse) {
@@ -372,7 +389,7 @@ function restoreGoogleDataToken() {
 
 function hasSavedBranchPortalUser() {
   try {
-    return Boolean(localStorage.getItem("branchPortalUser"));
+    return Boolean(localStorage.getItem("branchStaffDashboardUser"));
   } catch (error) {
     return false;
   }
@@ -399,44 +416,22 @@ function initializeCalendarAuth() {
 
   if (!clientId) return;
 
-  if (!window.google?.accounts?.oauth2) {
+  if (!false && window.google?.accounts?.oauth2) {
     setTimeout(initializeCalendarAuth, 250);
     return;
   }
 
-  calendarTokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: clientId,
-    scope: [
-      "https://www.googleapis.com/auth/calendar.events.readonly",
-      "https://www.googleapis.com/auth/calendar.readonly",
-      "https://www.googleapis.com/auth/classroom.courses.readonly",
-      "https://www.googleapis.com/auth/classroom.coursework.me.readonly"
-    ].join(" "),
-    callback: async tokenResponse => {
-      if (tokenResponse.error) {
-        console.error("Google data authorization failed:", tokenResponse);
-        return;
-      }
-
-      calendarAccessToken = tokenResponse.access_token || "";
-      classroomAccessToken = tokenResponse.access_token || "";
-      saveGoogleDataToken(tokenResponse);
-
-      await Promise.allSettled([
-        loadWeekdayCalendar(),
-        loadClassroomAssignments()
-      ]);
-      renderMiniWeekCalendar();
-    }
-  });
+  calendarTokenClient = null;
 
   // If this tab already authorized Google data and the token is still valid,
   // rebuild the dashboard automatically without another click.
   if (restoreGoogleDataToken()) {
     Promise.allSettled([
-      loadWeekdayCalendar(),
-      loadClassroomAssignments()
-    ]).then(renderMiniWeekCalendar);
+      loadWeekdayCalendar()
+    ]).then(() => {
+      renderMiniWeekCalendar();
+      renderLogoAssignmentHover();
+    });
   } else {
     renderMiniWeekCalendar();
 
@@ -568,8 +563,129 @@ function parseGoogleCalendarEventStart(event) {
   return null;
 }
 
+
+function parseSchoolCalendarEventStart(event) {
+  const startValue =
+    event?.start?.dateTime ||
+    event?.start?.date ||
+    event?.start ||
+    event?.startDate ||
+    event?.date ||
+    "";
+
+  const raw = String(startValue).trim();
+  if (!raw) return null;
+
+  // Date-only School Calendar events must be built as local dates so they do
+  // not shift backward a day in Central Time.
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+  if (dateOnly) {
+    return new Date(
+      Number(dateOnly[1]),
+      Number(dateOnly[2]) - 1,
+      Number(dateOnly[3]),
+      12, 0, 0, 0
+    );
+  }
+
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function isSchoolCalendarAllDay(event) {
+  if (event?.allDay) return true;
+
+  const rawStart = event?.start?.dateTime || event?.start?.date || event?.start || event?.startDate || "";
+  const rawEnd = event?.end?.dateTime || event?.end?.date || event?.end || event?.endDate || "";
+  const start = rawStart ? new Date(rawStart) : null;
+  const end = rawEnd ? new Date(rawEnd) : null;
+
+  // FACTS sometimes exports all-day events as a near-24-hour timed event
+  // (for example midnight-to-11:30 PM Central). Treat those as all day.
+  if (start && end && !Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
+    return (end - start) >= 23 * 60 * 60 * 1000;
+  }
+
+  return false;
+}
+
+function formatSchoolCalendarEventTime(event, startDate) {
+  if (isSchoolCalendarAllDay(event)) return "All day";
+  if (!startDate || Number.isNaN(startDate.getTime())) return "Time not available";
+
+  const rawEnd = event?.end?.dateTime || event?.end?.date || event?.end || event?.endDate || "";
+  const endDate = rawEnd ? new Date(rawEnd) : null;
+  const options = { hour: "numeric", minute: "2-digit" };
+  const startText = startDate.toLocaleTimeString([], options);
+
+  if (!endDate || Number.isNaN(endDate.getTime())) return startText;
+  return `${startText} – ${endDate.toLocaleTimeString([], options)}`;
+}
+
+async function loadSchoolCalendar() {
+  try {
+    const response = await fetch(`data/facts-calendar.json?v=${Date.now()}`, {
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      throw new Error(`School Calendar HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // The GitHub converter may output either a plain array or an object
+    // containing the event array. Support both formats.
+    if (Array.isArray(data)) {
+      schoolCalendarEvents = data;
+    } else if (Array.isArray(data?.events)) {
+      schoolCalendarEvents = data.events;
+    } else if (Array.isArray(data?.items)) {
+      schoolCalendarEvents = data.items;
+    } else {
+      schoolCalendarEvents = [];
+    }
+
+    schoolCalendarLoaded = true;
+
+    console.log("School Calendar JSON shape:", data);
+    console.log(`School Calendar loaded: ${schoolCalendarEvents.length} events`);
+
+    renderMiniWeekCalendar();
+    renderLogoAssignmentHover();
+    updateWeeklyScheduleLabels();
+  } catch (error) {
+    schoolCalendarLoaded = false;
+    console.error("School Calendar loading failed:", error);
+    renderLogoAssignmentHover();
+  }
+}
+
 function getWeekScheduleItems() {
   const { start, end } = getCurrentSchoolWeekBounds();
+
+  const schoolItems = schoolCalendarEvents
+    .map(event => {
+      const startDate = parseSchoolCalendarEventStart(event);
+      return {
+        type: "school-calendar",
+        sortDate: startDate,
+        title: event?.title || "Untitled event",
+        dateText: !startDate || Number.isNaN(startDate.getTime()) ? "" : startDate.toLocaleDateString([], {
+          weekday: "long", month: "short", day: "numeric"
+        }),
+        timeText: formatSchoolCalendarEventTime(event, startDate),
+        sourceText: "SCHOOL CALENDAR",
+        details: [event?.location, event?.description].filter(Boolean).join("\n"),
+        url: ""
+      };
+    })
+    .filter(item =>
+      item.sortDate &&
+      !Number.isNaN(item.sortDate.getTime()) &&
+      item.sortDate >= start &&
+      item.sortDate < end
+    );
 
   const calendarItems = weekCalendarEvents.map(event => {
     const startDate = parseGoogleCalendarEventStart(event);
@@ -586,6 +702,35 @@ function getWeekScheduleItems() {
       url: event.htmlLink || ""
     };
   });
+
+  const microsoftItems = microsoftCalendarEvents.map(event => {
+    const rawStart = event?.start?.dateTime || "";
+    const startDate = rawStart ? new Date(rawStart) : null;
+    const isAllDay = Boolean(event?.isAllDay);
+
+    let timeText = "Time not available";
+    if (isAllDay) {
+      timeText = "All day";
+    } else if (startDate && !Number.isNaN(startDate.getTime())) {
+      timeText = startDate.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    }
+
+    return {
+      type: "calendar",
+      sortDate: startDate,
+      title: event?.subject || "Untitled event",
+      dateText: !startDate || Number.isNaN(startDate.getTime()) ? "" : startDate.toLocaleDateString([], {
+        weekday: "long", month: "short", day: "numeric"
+      }),
+      timeText,
+      sourceText: "MY CALENDAR",
+      details: [
+        event?.location?.displayName,
+        event?.bodyPreview
+      ].filter(Boolean).join("\n"),
+      url: event?.webLink || "https://outlook.office.com/calendar/"
+    };
+  }).filter(item => item.sortDate && !Number.isNaN(item.sortDate.getTime()));
 
   const classroomItems = classroomAssignments
     .map(work => ({ work, due: classroomDueDateToDate(work) }))
@@ -618,7 +763,13 @@ function getWeekScheduleItems() {
   });
 
   const seen = new Set();
-  return [...classroomItems, ...filteredCalendarItems]
+  return [...schoolItems, ...classroomItems, ...filteredCalendarItems, ...microsoftItems]
+    .filter(item =>
+      item.sortDate &&
+      !Number.isNaN(item.sortDate.getTime()) &&
+      item.sortDate >= start &&
+      item.sortDate < end
+    )
     .filter(item => {
       const dayKey = !item.sortDate || Number.isNaN(item.sortDate.getTime())
         ? ""
@@ -699,79 +850,59 @@ function renderMiniWeekCalendar() {
 
   const daysHost = host.querySelector("#branchMiniWeekDays");
   const status = host.querySelector("#branchMiniWeekStatus");
-  const classroomText = host.querySelector("#branchClassroomSummaryText");
-  const classroomLink = host.querySelector("#branchClassroomSummaryLink");
   if (!daysHost || !status) return;
 
-  const items = getWeekScheduleItems();
-  const today = new Date();
-  const todayKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+  const now = new Date();
+  const items = getWeekScheduleItems()
+    .filter(item => item.type === "calendar" && item.sortDate && item.sortDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate()))
+    .slice(0, 5);
 
   daysHost.innerHTML = "";
 
-  // Only render dates that actually contain an event or Classroom due date.
-  const grouped = new Map();
   items.forEach(item => {
     const d = item.sortDate;
-    if (!d || Number.isNaN(d.getTime())) return;
-    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-    if (!grouped.has(key)) grouped.set(key, { day: new Date(d.getFullYear(), d.getMonth(), d.getDate()), items: [] });
-    grouped.get(key).items.push(item);
+    const today = new Date();
+    const todayKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+    const itemKey = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+
+    const row = document.createElement("div");
+    row.className = `branch-miniweek-day${itemKey === todayKey ? " is-today" : ""}`;
+
+    const dateBlock = document.createElement("div");
+    dateBlock.innerHTML = `
+      <div class="branch-miniweek-dayname">${d.toLocaleDateString([], {month:"short"})}</div>
+      <div class="branch-miniweek-date">${d.getDate()}</div>`;
+
+    const events = document.createElement("div");
+    events.className = "branch-miniweek-events";
+
+    const eventEl = document.createElement("button");
+    eventEl.type = "button";
+    eventEl.className = "branch-miniweek-event calendar";
+    eventEl.innerHTML = `
+      <div class="branch-miniweek-event-title"></div>
+      <div class="branch-miniweek-event-time"></div>`;
+    eventEl.querySelector(".branch-miniweek-event-title").textContent = item.title || "Untitled event";
+    eventEl.querySelector(".branch-miniweek-event-time").textContent =
+      [item.timeText, item.sourceText].filter(Boolean).join(" • ");
+    eventEl.addEventListener("click", () => showScheduleItemDetails(item));
+
+    events.appendChild(eventEl);
+    row.append(dateBlock, events);
+    daysHost.appendChild(row);
   });
 
-  [...grouped.values()]
-    .sort((a, b) => a.day - b.day)
-    .forEach(group => {
-      const day = group.day;
-      const dayKey = `${day.getFullYear()}-${day.getMonth()}-${day.getDate()}`;
-      const column = document.createElement("div");
-      column.className = `branch-miniweek-day${dayKey === todayKey ? " is-today" : ""}`;
-
-      const heading = document.createElement("div");
-      heading.innerHTML = `
-        <div class="branch-miniweek-dayname">${day.toLocaleDateString([], { weekday: "short" })}</div>
-        <div class="branch-miniweek-date">${day.getDate()}</div>`;
-      column.appendChild(heading);
-
-      const events = document.createElement("div");
-      events.className = "branch-miniweek-events";
-
-      group.items.slice(0, 4).forEach(item => {
-        const eventEl = document.createElement("button");
-        eventEl.type = "button";
-        eventEl.className = `branch-miniweek-event ${item.type === "classroom" ? "classroom" : "calendar"}`;
-        eventEl.title = `${item.title}${item.sourceText ? " • " + item.sourceText : ""}`;
-        eventEl.innerHTML = `
-          <div class="branch-miniweek-event-title"></div>
-          <div class="branch-miniweek-event-time"></div>`;
-        eventEl.querySelector(".branch-miniweek-event-title").textContent = item.title || "Untitled item";
-        eventEl.querySelector(".branch-miniweek-event-time").textContent = item.timeText || "";
-        eventEl.addEventListener("click", () => showScheduleItemDetails(item));
-        events.appendChild(eventEl);
-      });
-
-      if (group.items.length > 4) {
-        const more = document.createElement("button");
-        more.type = "button";
-        more.className = "branch-miniweek-connect";
-        more.textContent = `+${group.items.length - 4} more`;
-        more.addEventListener("click", showWeekdayCalendarEvents);
-        events.appendChild(more);
-      }
-
-      column.appendChild(events);
-      daysHost.appendChild(column);
-    });
-
-  if (!items.length && calendarAccessToken && classroomAccessToken) {
+  if (!items.length && (schoolCalendarLoaded || calendarAccessToken || microsoftCalendarConnected)) {
     const empty = document.createElement("div");
     empty.className = "branch-miniweek-noitems";
-    empty.textContent = "No events or due dates this week.";
+    empty.textContent = "No upcoming calendar events are scheduled for the rest of this school week.";
     daysHost.appendChild(empty);
   }
 
-  if (calendarAccessToken && classroomAccessToken) {
-    status.textContent = items.length === 1 ? "1 event this week" : `${items.length} events this week`;
+  if (schoolCalendarLoaded || calendarAccessToken || microsoftCalendarConnected) {
+    status.textContent = items.length
+      ? `Showing next ${items.length} event${items.length === 1 ? "" : "s"}`
+      : "Calendar is up to date";
   } else {
     status.innerHTML = "";
     const text = document.createElement("span");
@@ -784,20 +915,7 @@ function renderMiniWeekCalendar() {
     status.append(text, button);
   }
 
-  // Keep Classroom visible as its own summary, while Classroom due dates also appear above.
-  if (classroomText) {
-    if (classroomAccessToken) {
-      classroomText.textContent = classroomAssignments.length === 1
-        ? "1 upcoming assignment"
-        : `${classroomAssignments.length} upcoming assignments`;
-    } else {
-      classroomText.textContent = "Connect to load assignments";
-    }
-  }
-  if (classroomLink) {
-    classroomLink.dataset.classroomLoaded = classroomAccessToken ? "true" : "false";
-  }
-  wireClassroomLinks();
+  renderLogoAssignmentHover();
 }
 
 function updateWeeklyScheduleLabels() {
@@ -812,6 +930,7 @@ function updateWeeklyScheduleLabels() {
   }
 
   renderMiniWeekCalendar();
+  renderLogoAssignmentHover();
 }
 
 function showScheduleItemDetails(scheduleItem) {
@@ -824,7 +943,7 @@ function showScheduleItemDetails(scheduleItem) {
   const openLink = modal.querySelector(".branch-calendar-open-google");
   if (!list || !title || !kicker || !openLink) return;
 
-  kicker.textContent = scheduleItem.type === "classroom" ? "Google Classroom" : "Google Calendar";
+  kicker.textContent = scheduleItem.sourceText || "Calendar";
   title.textContent = scheduleItem.title || "Event Details";
   list.innerHTML = "";
 
@@ -861,7 +980,9 @@ function showScheduleItemDetails(scheduleItem) {
     openLink.href = scheduleItem.url;
     openLink.textContent = scheduleItem.type === "classroom"
       ? "Open in Google Classroom ↗"
-      : "Open in Google Calendar ↗";
+      : scheduleItem.sourceText === "MY CALENDAR"
+        ? "Open My Calendar ↗"
+        : "Open Calendar ↗";
   } else {
     openLink.style.display = "none";
   }
@@ -894,7 +1015,7 @@ function showWeekdayCalendarEvents() {
   list.innerHTML = "";
 
   if (!weekItems.length) {
-    list.innerHTML = '<div class="branch-calendar-empty">No calendar events or Classroom due dates are scheduled Monday through Friday this week.</div>';
+    list.innerHTML = '<div class="branch-calendar-empty">No calendar events are scheduled Monday through Friday this week.</div>';
   } else {
     weekItems.forEach(scheduleItem => {
       const item = document.createElement(scheduleItem.url ? "a" : "div");
@@ -1107,94 +1228,140 @@ function renderLogoAssignmentHover(failed = false) {
 
   list.innerHTML = "";
 
-  if (subtitle) {
-    if (failed) {
-      subtitle.textContent = "Google Classroom unavailable";
-    } else if (classroomAccessToken) {
-      subtitle.textContent = classroomAssignments.length === 1
-        ? "1 upcoming assignment"
-        : `${classroomAssignments.length} upcoming assignments`;
-    } else {
-      subtitle.textContent = "Google Classroom";
-    }
-  }
-
   if (failed) {
+    if (subtitle) subtitle.textContent = "Calendar unavailable";
     const empty = document.createElement("div");
     empty.className = "branch-assignment-hover-empty";
-    empty.textContent = "Assignments could not be loaded right now.";
+    empty.textContent = "Calendar events could not be loaded right now.";
     list.appendChild(empty);
     return;
   }
 
-  if (!classroomAccessToken) {
+  if (!schoolCalendarLoaded && !calendarAccessToken && !microsoftCalendarConnected) {
+    if (subtitle) subtitle.textContent = "School Calendar + My Calendar";
     const empty = document.createElement("div");
     empty.className = "branch-assignment-hover-empty";
-    empty.textContent = "Connect Google Classroom to load assignments.";
+    empty.textContent = "Loading School Calendar. Connect Microsoft 365 to add your personal calendar.";
     list.appendChild(empty);
     return;
   }
 
-  if (!classroomAssignments.length) {
-    const empty = document.createElement("div");
-    empty.className = "branch-assignment-hover-empty";
-    empty.textContent = "No upcoming assignments. You're all caught up!";
-    list.appendChild(empty);
-    return;
+  const now = new Date();
+
+  const weekItems = getWeekScheduleItems()
+    .filter(item => {
+      if (!item.sortDate || Number.isNaN(item.sortDate.getTime())) return false;
+      return item.type === "school-calendar" || item.type === "calendar";
+    });
+
+  const schoolItems = weekItems.filter(item => item.type === "school-calendar");
+  const myItems = weekItems.filter(item => item.type === "calendar");
+
+  if (subtitle) {
+    subtitle.textContent = "Two calendars • one weekly view";
   }
 
-  classroomAssignments.forEach(item => {
-    const link = document.createElement("a");
-    link.className = "branch-assignment-hover-item";
-    link.href = item.alternateLink || "https://classroom.google.com/";
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    link.title = `${item.title || "Untitled assignment"} • ${formatClassroomDueDate(item)}`;
+  function buildEventRow(item) {
+    const row = document.createElement(item.url ? "a" : "div");
+    row.className = "branch-assignment-hover-item";
+
+    if (item.type === "school-calendar") {
+      row.classList.add("school-calendar-event");
+    }
+
+    if (item.url) {
+      row.href = item.url;
+      row.target = "_blank";
+      row.rel = "noopener noreferrer";
+    }
+
+    row.title = `${item.title || "Untitled event"} • ${item.dateText || ""} ${item.timeText || ""}`.trim();
 
     const main = document.createElement("div");
     main.className = "branch-assignment-hover-main";
 
     const name = document.createElement("span");
     name.className = "branch-assignment-hover-name";
-    name.textContent = item.title || "Untitled assignment";
+    name.textContent = item.title || "Untitled event";
 
-    const course = document.createElement("span");
-    course.className = "branch-assignment-hover-course";
-    course.textContent = item.courseName || "Google Classroom";
+    const source = document.createElement("span");
+    source.className = "branch-assignment-hover-course";
+    source.textContent = item.sourceText || "Calendar";
 
-    const due = document.createElement("span");
-    due.className = "branch-assignment-hover-due";
+    const when = document.createElement("span");
+    when.className = "branch-assignment-hover-due";
 
-    const dueDate = classroomDueDateToDate(item);
-    if (dueDate) {
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const dueDay = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-      const dayDiff = Math.round((dueDay - today) / 86400000);
+    const eventDate = item.sortDate;
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const eventDay = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+    const dayDiff = Math.round((eventDay - today) / 86400000);
 
-      if (dayDiff === 0) {
-        due.classList.add("today");
-        due.textContent = "DUE TODAY";
-      } else if (dayDiff === 1) {
-        due.classList.add("tomorrow");
-        due.textContent = "DUE TOMORROW";
-      } else {
-        due.textContent = dueDate.toLocaleDateString([], {
-          weekday: "short",
-          month: "short",
-          day: "numeric"
-        }).toUpperCase();
-      }
+    if (dayDiff === 0) {
+      when.classList.add("today");
+      when.textContent = item.timeText === "All day" ? "TODAY" : item.timeText;
+    } else if (dayDiff === 1) {
+      when.classList.add("tomorrow");
+      when.textContent = item.timeText === "All day" ? "TOMORROW" : `TOMORROW • ${item.timeText}`;
     } else {
-      due.textContent = "NO DUE DATE";
+      const day = eventDate.toLocaleDateString([], { weekday: "short" }).toUpperCase();
+      when.textContent = item.timeText === "All day" ? day : `${day} • ${item.timeText}`;
     }
 
-    main.append(name, course);
-    link.append(main, due);
-    list.appendChild(link);
-  });
-}
+    main.append(name, source);
+    row.append(main, when);
+    return row;
+  }
 
+  function buildCalendarSection(titleText, countText, items, kind) {
+    const section = document.createElement("section");
+    section.className = `branch-calendar-split-section ${kind}`;
+
+    const header = document.createElement("div");
+    header.className = "branch-calendar-split-header";
+
+    const title = document.createElement("span");
+    title.className = "branch-calendar-split-title";
+    title.textContent = titleText;
+
+    const count = document.createElement("span");
+    count.className = "branch-calendar-split-count";
+    count.textContent = countText;
+
+    header.append(title, count);
+
+    const body = document.createElement("div");
+    body.className = "branch-calendar-split-list";
+
+    if (!items.length) {
+      const empty = document.createElement("div");
+      empty.className = "branch-calendar-split-empty";
+      empty.textContent = kind === "school"
+        ? "No School Calendar events this week."
+        : "No My Calendar events this week.";
+      body.appendChild(empty);
+    } else {
+      items.forEach(item => body.appendChild(buildEventRow(item)));
+    }
+
+    section.append(header, body);
+    return section;
+  }
+
+  list.append(
+    buildCalendarSection(
+      "MY CALENDAR",
+      `${myItems.length} event${myItems.length === 1 ? "" : "s"}`,
+      myItems,
+      "personal"
+    ),
+    buildCalendarSection(
+      "SCHOOL CALENDAR",
+      `${schoolItems.length} event${schoolItems.length === 1 ? "" : "s"}`,
+      schoolItems,
+      "school"
+    )
+  );
+}
 
 function ensureClassroomModal() {
   let modal = document.getElementById("branchClassroomModal");
@@ -1448,7 +1615,6 @@ function wireCalendarButton() {
 
 initializeCalendarAuth();
 wireCalendarButton();
-wireClassroomLinks();
 renderMiniWeekCalendar();
 renderLogoAssignmentHover();
 
@@ -1465,6 +1631,364 @@ function updateDailyQuote(){
   quote.innerHTML = `“${item.text}”<small>— ${item.author}</small>`;
 }
 updateDailyQuote();
+
+
+
+
+function updateGoogleHeaderButton() {
+  const button = document.getElementById("branchGoogleConnect");
+  if (!button) return;
+
+  if (calendarAccessToken) {
+    button.textContent = "Google ✓";
+    button.classList.add("is-connected");
+  } else {
+    button.textContent = "Google";
+    button.classList.remove("is-connected");
+  }
+}
+
+function initializeGoogleHeaderButton() {
+  const button = document.getElementById("branchGoogleConnect");
+  if (!button || button.dataset.ready === "true") return;
+  button.dataset.ready = "true";
+
+  button.addEventListener("click", () => {
+    if (calendarAccessToken) return;
+
+    if (calendarTokenClient) {
+      try {
+        calendarTokenClient.requestAccessToken({ prompt: "" });
+      } catch (error) {
+        console.warn("Google connection needs interaction:", error);
+        try { google.accounts.id.prompt(); } catch (_) {}
+      }
+    } else {
+      try { google.accounts.id.prompt(); } catch (_) {}
+    }
+  });
+
+  updateGoogleHeaderButton();
+}
+
+document.addEventListener("DOMContentLoaded", initializeGoogleHeaderButton);
+if (document.readyState !== "loading") initializeGoogleHeaderButton();
+
+/* ===== Microsoft 365 / Exchange integration =====
+   Delegated, read-only access:
+   User.Read + Calendars.Read + Mail.Read
+*/
+async function initializeMicrosoft365() {
+  const button = document.getElementById("branchMicrosoftConnect");
+  const status = document.getElementById("branchMicrosoftStatus");
+
+  if (!window.msal?.PublicClientApplication) {
+    if (status) status.textContent = "Microsoft sign-in is loading…";
+    setTimeout(initializeMicrosoft365, 300);
+    return;
+  }
+
+  try {
+    microsoftMsal = new msal.PublicClientApplication({
+      auth: {
+        clientId: MICROSOFT_CLIENT_ID,
+        authority: `https://login.microsoftonline.com/${MICROSOFT_TENANT_ID}`,
+        redirectUri: "https://thebranch-ab.github.io/branch-school-staff-dashboard/"
+      },
+      cache: {
+        cacheLocation: "localStorage",
+        storeAuthStateInCookie: false
+      }
+    });
+
+    if (typeof microsoftMsal.initialize === "function") {
+      await microsoftMsal.initialize();
+    }
+
+    try {
+      await microsoftMsal.handleRedirectPromise();
+    } catch (error) {
+      console.warn("Microsoft redirect handling:", error);
+    }
+
+    const accounts = microsoftMsal.getAllAccounts();
+    if (accounts.length) {
+      microsoftAccount = accounts[0];
+      microsoftMsal.setActiveAccount?.(microsoftAccount);
+      await loadMicrosoft365Data(false);
+    } else {
+      setMicrosoftStatus("Connect your Exchange calendar and inbox.");
+    }
+
+    if (button) {
+      button.addEventListener("click", async () => {
+        try {
+          button.disabled = true;
+          button.textContent = "Connecting…";
+
+          const login = await microsoftMsal.loginPopup({
+            scopes: MICROSOFT_SCOPES,
+            prompt: "select_account"
+          });
+
+          microsoftAccount = login.account;
+          microsoftMsal.setActiveAccount?.(microsoftAccount);
+          await loadMicrosoft365Data(true);
+        } catch (error) {
+          console.error("Microsoft sign-in failed:", error);
+          setMicrosoftStatus("Microsoft sign-in was not completed.");
+        } finally {
+          button.disabled = false;
+          updateMicrosoftButton();
+        }
+      });
+    }
+
+    updateMicrosoftButton();
+  } catch (error) {
+    console.error("Could not initialize Microsoft 365:", error);
+    setMicrosoftStatus("Microsoft 365 connection unavailable.");
+  }
+}
+
+function setMicrosoftStatus(text) {
+  const status = document.getElementById("branchMicrosoftStatus");
+  if (status) status.textContent = text;
+}
+
+function updateMicrosoftButton() {
+  const button = document.getElementById("branchMicrosoftConnect");
+  if (!button) return;
+  button.textContent = microsoftAccount ? "Microsoft ✓" : "Microsoft 365";
+  button.classList.toggle("is-connected", Boolean(microsoftAccount));
+}
+
+async function getMicrosoftAccessToken(interactive = false) {
+  if (!microsoftMsal) throw new Error("Microsoft authentication is not initialized.");
+
+  microsoftAccount =
+    microsoftMsal.getActiveAccount?.() ||
+    microsoftAccount ||
+    microsoftMsal.getAllAccounts()[0] ||
+    null;
+
+  if (!microsoftAccount) {
+    if (!interactive) return "";
+    const login = await microsoftMsal.loginPopup({ scopes: MICROSOFT_SCOPES });
+    microsoftAccount = login.account;
+    microsoftMsal.setActiveAccount?.(microsoftAccount);
+  }
+
+  try {
+    const token = await microsoftMsal.acquireTokenSilent({
+      scopes: MICROSOFT_SCOPES,
+      account: microsoftAccount
+    });
+    return token.accessToken || "";
+  } catch (error) {
+    if (!interactive) {
+      console.warn("Silent Microsoft token acquisition needs interaction:", error);
+      return "";
+    }
+    const token = await microsoftMsal.acquireTokenPopup({
+      scopes: MICROSOFT_SCOPES,
+      account: microsoftAccount
+    });
+    return token.accessToken || "";
+  }
+}
+
+async function graphGet(path, token) {
+  const response = await fetch(`https://graph.microsoft.com/v1.0${path}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+      Prefer: 'outlook.timezone="Central Standard Time"'
+    }
+  });
+
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(`Microsoft Graph ${response.status}: ${message}`);
+  }
+  return response.json();
+}
+
+
+let microsoftProfilePhotoUrl = "";
+
+async function loadMicrosoftProfilePhoto(token) {
+  const avatar = document.getElementById("avatar");
+  if (!avatar || !token) return;
+
+  try {
+    const response = await fetch("https://graph.microsoft.com/v1.0/me/photo/$value", {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    // 404 simply means this Microsoft account has no profile photo.
+    if (response.status === 404) {
+      console.log("No Microsoft 365 profile photo is set for this user.");
+      return;
+    }
+
+    if (!response.ok) {
+      throw new Error(`Microsoft profile photo HTTP ${response.status}`);
+    }
+
+    const blob = await response.blob();
+
+    if (microsoftProfilePhotoUrl) {
+      URL.revokeObjectURL(microsoftProfilePhotoUrl);
+    }
+    microsoftProfilePhotoUrl = URL.createObjectURL(blob);
+
+    avatar.textContent = "";
+    avatar.dataset.photoLoaded = "true";
+    avatar.style.backgroundImage = `url("${microsoftProfilePhotoUrl}")`;
+    avatar.style.backgroundSize = "cover";
+    avatar.style.backgroundPosition = "center";
+    avatar.style.backgroundRepeat = "no-repeat";
+    avatar.style.boxShadow = "inset 0 0 0 1px rgba(255,255,255,.18)";
+  } catch (error) {
+    console.warn("Microsoft 365 profile photo could not be loaded:", error);
+  }
+}
+
+async function loadMicrosoft365Data(interactive = false) {
+  const token = await getMicrosoftAccessToken(interactive);
+  if (!token) {
+    setMicrosoftStatus("Click Connect Microsoft 365 to load Exchange.");
+    updateMicrosoftButton();
+    return;
+  }
+
+  setMicrosoftStatus("Loading Exchange calendar and inbox…");
+
+  const now = new Date();
+  const end = new Date(now);
+  end.setDate(end.getDate() + 45);
+
+  const startIso = encodeURIComponent(now.toISOString());
+  const endIso = encodeURIComponent(end.toISOString());
+
+  const profilePath = "/me?$select=displayName,mail,userPrincipalName";
+  const calendarPath =
+    `/me/calendarView?startDateTime=${startIso}&endDateTime=${endIso}` +
+    "&$select=subject,start,end,location,bodyPreview,webLink,isAllDay" +
+    "&$orderby=start/dateTime&$top=50";
+  const inboxPath = "/me/mailFolders/inbox?$select=unreadItemCount,totalItemCount";
+  const messagesPath =
+    "/me/mailFolders/inbox/messages" +
+    "?$select=subject,from,receivedDateTime,webLink,isRead" +
+    "&$orderby=receivedDateTime%20desc&$top=12";
+
+  try {
+    const [profile, calendar, inbox, messages] = await Promise.all([
+      graphGet(profilePath, token),
+      graphGet(calendarPath, token),
+      graphGet(inboxPath, token),
+      graphGet(messagesPath, token)
+    ]);
+
+    microsoftCalendarEvents = Array.isArray(calendar?.value) ? calendar.value : [];
+    microsoftCalendarConnected = true;
+
+    const email = profile?.mail || profile?.userPrincipalName || microsoftAccount?.username || "";
+    const name = profile?.displayName || microsoftAccount?.name || "Staff Member";
+
+    if (email) {
+      setStudentInfo(name, email);
+      saveSignedInUser(name, email);
+      const accountStatus = document.getElementById("accountStatus");
+      if (accountStatus) accountStatus.textContent = "Microsoft 365 connected";
+
+      // User.Read already grants access to the signed-in user's profile photo.
+      loadMicrosoftProfilePhoto(token);
+    }
+
+    const latestMessages = Array.isArray(messages?.value) ? messages.value : [];
+    latestMessages.sort((a, b) =>
+      new Date(b?.receivedDateTime || 0) - new Date(a?.receivedDateTime || 0)
+    );
+    renderMicrosoftInbox(inbox, latestMessages);
+    setMicrosoftStatus("Exchange calendar + inbox connected.");
+    updateMicrosoftButton();
+
+    renderMiniWeekCalendar();
+    renderLogoAssignmentHover();
+    updateWeeklyScheduleLabels();
+  } catch (error) {
+    console.error("Microsoft 365 data load failed:", error);
+    setMicrosoftStatus("Could not load Exchange data.");
+    renderMicrosoftInbox(null, [], true);
+  }
+}
+
+function renderMicrosoftInbox(inbox, messages, failed = false) {
+  const countEl = document.getElementById("branchInboxUnread");
+  const listEl = document.getElementById("branchInboxMessages");
+  const openEl = document.getElementById("branchInboxOpen");
+
+  if (openEl) openEl.href = "https://outlook.office.com/mail/";
+
+  if (!countEl || !listEl) return;
+
+  if (failed) {
+    countEl.textContent = "—";
+    listEl.innerHTML = '<div class="branch-inbox-empty">Inbox unavailable right now.</div>';
+    return;
+  }
+
+  if (!microsoftCalendarConnected) {
+    countEl.textContent = "—";
+    listEl.innerHTML = '<div class="branch-inbox-empty">Connect Microsoft 365 to see your inbox.</div>';
+    return;
+  }
+
+  countEl.textContent = "Latest";
+
+  listEl.innerHTML = "";
+  if (!messages.length) {
+    listEl.innerHTML = '<div class="branch-inbox-empty">No recent inbox messages.</div>';
+    return;
+  }
+
+  messages.forEach(message => {
+    const link = document.createElement("a");
+    link.className = `branch-inbox-message${message?.isRead === false ? " is-unread" : ""}`;
+    link.href = message?.webLink || "https://outlook.office.com/mail/";
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+
+    const sender =
+      message?.from?.emailAddress?.name ||
+      message?.from?.emailAddress?.address ||
+      "Sender";
+
+    const received = message?.receivedDateTime
+      ? new Date(message.receivedDateTime).toLocaleString([], {
+          month: "short", day: "numeric", hour: "numeric", minute: "2-digit"
+        })
+      : "";
+
+    link.innerHTML = `
+      <div class="branch-inbox-message-top">
+        <strong></strong><span></span>
+      </div>
+      <div class="branch-inbox-subject"></div>`;
+
+    link.querySelector("strong").textContent = sender;
+    link.querySelector(".branch-inbox-message-top span").textContent = received;
+    link.querySelector(".branch-inbox-subject").textContent = message?.subject || "(No subject)";
+    listEl.appendChild(link);
+  });
+}
+
+document.addEventListener("DOMContentLoaded", initializeMicrosoft365);
+if (document.readyState !== "loading") initializeMicrosoft365();
 
 
 /* ===== Keep the Branch School Dashboard open =====
@@ -1550,3 +2074,271 @@ updateDailyQuote();
     install();
   }
 })();
+
+
+// Load the shared School Calendar independently of Microsoft/Google sign-in.
+loadSchoolCalendar();
+
+
+
+
+// Split School Calendar / My Calendar within the same center circle.
+(function addSplitCalendarStyles() {
+  if (document.getElementById("branchSplitCalendarStyles")) return;
+
+  const style = document.createElement("style");
+  style.id = "branchSplitCalendarStyles";
+  style.textContent = `
+    #branchAssignmentHoverList{
+      display:grid;
+      grid-template-rows:minmax(0,1fr) minmax(0,1fr);
+      gap:10px;
+      min-height:0;
+      overflow:hidden !important;
+    }
+
+    #branchAssignmentHover .branch-calendar-split-section{
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
+
+    #branchAssignmentHover .branch-calendar-split-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:0 4px 5px;
+      flex:0 0 auto;
+    }
+
+    #branchAssignmentHover .branch-calendar-split-title{
+      font-size:10px;
+      font-weight:900;
+      letter-spacing:.11em;
+      text-transform:uppercase;
+      color:#fff;
+    }
+
+    #branchAssignmentHover .branch-calendar-split-section.school .branch-calendar-split-title,
+    #branchAssignmentHover .branch-calendar-split-section.personal .branch-calendar-split-title{
+      color:#fff;
+    }
+
+    #branchAssignmentHover .branch-calendar-split-count{
+      font-size:9px;
+      font-weight:800;
+      color:rgba(255,255,255,.66);
+    }
+
+    #branchAssignmentHover .branch-calendar-split-list{
+      min-height:0;
+      overflow-y:auto;
+      overscroll-behavior:contain;
+      padding-right:3px;
+      display:grid;
+      gap:6px;
+      align-content:start;
+      scrollbar-width:thin;
+    }
+
+    #branchAssignmentHover .branch-calendar-split-list::-webkit-scrollbar{
+      width:5px;
+    }
+
+    #branchAssignmentHover .branch-calendar-split-list::-webkit-scrollbar-thumb{
+      background:rgba(255,255,255,.28);
+      border-radius:999px;
+    }
+
+    #branchAssignmentHover .branch-calendar-split-empty{
+      padding:10px 8px;
+      border:1px dashed rgba(255,255,255,.16);
+      border-radius:10px;
+      font-size:10px;
+      color:rgba(255,255,255,.65);
+      text-align:center;
+    }
+
+    #branchAssignmentHover .branch-calendar-split-section .branch-assignment-hover-item{
+      margin:0 !important;
+      flex:0 0 auto;
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
+
+
+// ===== Afterschool Enrichment Google Sheet =====
+const AFTERSCHOOL_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSh_h36wS29zGwdFGtO2L5Equ-u-cOiCdVLn_W2lCGtHUlAbfNMA2I15EOk7C7iB0HTsETlfLM9RjwW/pub?output=csv";
+
+function csvRows(text){
+  const rows=[];
+  let row=[], cell="", quoted=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i], n=text[i+1];
+    if(c === '"'){
+      if(quoted && n === '"'){ cell += '"'; i++; }
+      else quoted = !quoted;
+    }else if(c === "," && !quoted){
+      row.push(cell); cell="";
+    }else if((c === "\n" || c === "\r") && !quoted){
+      if(c === "\r" && n === "\n") i++;
+      row.push(cell); cell="";
+      if(row.some(v=>String(v).trim() !== "")) rows.push(row);
+      row=[];
+    }else{
+      cell += c;
+    }
+  }
+  row.push(cell);
+  if(row.some(v=>String(v).trim() !== "")) rows.push(row);
+  return rows;
+}
+
+function aseIcon(name){
+  const s=String(name||"").toLowerCase();
+  if(s.includes("hoops") || s.includes("basketball")) return "🏀";
+  if(s.includes("coding") || s.includes("computer")) return "💻";
+  if(s.includes("art")) return "🎨";
+  if(s.includes("robot")) return "🤖";
+  if(s.includes("piano") || s.includes("music")) return "🎵";
+  if(s.includes("soccer")) return "⚽";
+  if(s.includes("chess")) return "♟️";
+  if(s.includes("ballet") || s.includes("dance")) return "🩰";
+  if(s.includes("debate")) return "💬";
+  if(s.includes("fine motor")) return "✋";
+  if(s.includes("athlete")) return "🏃";
+  return "⭐";
+}
+
+async function loadAfterschoolToday(){
+  const host=document.getElementById("afterschoolToday");
+  if(!host) return;
+  host.innerHTML="Loading…";
+
+  try{
+    const res=await fetch(AFTERSCHOOL_CSV_URL+"&_="+Date.now(),{cache:"no-store"});
+    if(!res.ok) throw new Error("HTTP "+res.status);
+
+    const rows=csvRows(await res.text());
+    if(rows.length < 2) throw new Error("No schedule rows");
+
+    const norm=s=>String(s||"").replace(/^\uFEFF/,"").trim().toLowerCase();
+    const headers=rows[0].map(norm);
+    const findCol=(...names)=>headers.findIndex(h=>names.map(norm).includes(h));
+
+    const dayI=findCol("Day");
+    const classI=findCol("Afterschool Enrichment","Enrichment");
+    const gradesI=findCol("Grades","Grade");
+    const timeI=findCol("Time");
+    const dutyI=findCol("Afterschool LT Duty","Afterschool Duty","LT Duty");
+
+    if(dayI < 0) throw new Error("Day column missing");
+
+    const today=new Intl.DateTimeFormat("en-US",{
+      weekday:"long",
+      timeZone:"America/Chicago"
+    }).format(new Date());
+
+    const items=rows.slice(1).filter(r=>norm(r[dayI]) === norm(today));
+
+    if(!items.length){
+      host.innerHTML=`<div class="ase-empty">No afterschool information is listed for ${today}.</div>`;
+      return;
+    }
+
+    const dutyRow=dutyI >= 0 ? items.find(r=>String(r[dutyI]||"").trim()) : null;
+    const duty=dutyRow ? String(dutyRow[dutyI]||"").trim() : "";
+
+    let html=`
+      <div class="ase-duty-card">
+        <div class="ase-duty-icon" aria-hidden="true">👥</div>
+        <div class="ase-duty-name"><strong>Afterschool LT:</strong> ${duty || "Not listed"}</div>
+      </div>
+      <div class="ase-section-title">
+        <span aria-hidden="true">📘</span>
+        <span><span class="ase-prefix">ASE:</span> TODAY'S ENRICHMENT</span>
+      </div>
+    `;
+
+    const enrichment=classI >= 0
+      ? items.filter(r=>String(r[classI]||"").trim())
+      : [];
+
+    if(enrichment.length){
+      html += enrichment.map(r=>{
+        const name=String(r[classI]||"").trim();
+        const grades=gradesI >= 0 ? String(r[gradesI]||"").trim() : "";
+        const time=timeI >= 0 ? String(r[timeI]||"").trim() : "";
+        const meta=[grades ? `Grades ${grades}` : "", time].filter(Boolean).join(" • ");
+
+        return `
+          <div class="ase-program">
+            <div class="ase-program-icon" aria-hidden="true">${aseIcon(name)}</div>
+            <div>
+              <div class="ase-program-name"><span class="ase-prefix">ASE:</span> ${name}</div>
+              ${meta ? `<div class="ase-program-meta">${meta}</div>` : ""}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }else{
+      html += `<div class="ase-empty">No ASE programs are listed today.</div>`;
+    }
+
+    host.innerHTML=html;
+
+  }catch(err){
+    console.error("Afterschool schedule failed:",err);
+    host.innerHTML=`<div class="ase-empty">Afterschool information is temporarily unavailable.</div>`;
+  }
+}
+
+loadAfterschoolToday();
+
+
+
+
+/* ===== Microsoft 365 automatic refresh =====
+   Refreshes Outlook inbox/calendar without requiring the user to sign in again.
+   Also refreshes when the dashboard tab becomes active again. */
+let branchMicrosoftRefreshInProgress = false;
+let branchMicrosoftLastRefresh = 0;
+const BRANCH_MICROSOFT_REFRESH_MS = 2 * 60 * 1000; // every 2 minutes
+
+async function refreshBranchMicrosoft365(force = false) {
+  const now = Date.now();
+
+  if (branchMicrosoftRefreshInProgress) return;
+  if (!force && (now - branchMicrosoftLastRefresh) < 30000) return;
+
+  branchMicrosoftRefreshInProgress = true;
+  try {
+    await loadMicrosoft365Data(false);
+    branchMicrosoftLastRefresh = Date.now();
+  } catch (error) {
+    console.warn("Automatic Microsoft 365 refresh skipped:", error);
+  } finally {
+    branchMicrosoftRefreshInProgress = false;
+  }
+}
+
+setInterval(() => {
+  if (!document.hidden) refreshBranchMicrosoft365(false);
+}, BRANCH_MICROSOFT_REFRESH_MS);
+
+window.addEventListener("focus", () => {
+  refreshBranchMicrosoft365(false);
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) refreshBranchMicrosoft365(false);
+});
+
+console.log("TBS Staff Dashboard app version: v53 auto-refresh email");
+
+
+console.log("TBS Staff Dashboard v59: Microsoft/Exchange authentication only");
