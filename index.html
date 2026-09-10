@@ -3,903 +3,362 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>The Branch School Staff Dashboard</title>
+  <title>The Branch School Student Portal</title>
   <link rel="stylesheet" href="styles.css">
 
-  <style>
-    /* Make only the large center Staff Dashboard logo fill its circle. */
-    .badge-stage .logo-shell {
-      padding: 0 !important;
-      overflow: hidden;
+  <style id="branchMiniWeekBaseStyles">
+    #branchMiniWeek{color:#fff}
+    #branchMiniWeek .branch-miniweek-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    #branchMiniWeek .branch-miniweek-label{font-size:12px;font-weight:900;letter-spacing:.14em;color:#8ef06c}
+    #branchMiniWeek .branch-miniweek-open{font-size:12px;font-weight:800;color:#8ef06c;text-decoration:none;white-space:nowrap}
+    #branchMiniWeek .branch-miniweek-open:hover{text-decoration:underline}
+    #branchMiniWeek .branch-miniweek-days{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px}
+    #branchMiniWeek .branch-miniweek-day{min-width:0;border:1px solid rgba(255,255,255,.13);border-radius:14px;background:rgba(255,255,255,.045);padding:10px;min-height:112px}
+    #branchMiniWeek .branch-miniweek-day.is-today{border-color:rgba(142,240,108,.85);background:rgba(142,240,108,.10)}
+    #branchMiniWeek .branch-miniweek-dayname{font-size:10px;font-weight:900;letter-spacing:.09em;color:#bdb7c8;text-transform:uppercase}
+    #branchMiniWeek .branch-miniweek-date{font-size:22px;font-weight:900;line-height:1.1;margin:2px 0 8px}
+    #branchMiniWeek .branch-miniweek-events{display:grid;gap:6px}
+    #branchMiniWeek .branch-miniweek-event{display:block;width:100%;border:0;text-align:left;border-radius:9px;padding:7px;background:rgba(142,240,108,.14);color:#fff;overflow:hidden;cursor:pointer;font:inherit}
+    #branchMiniWeek .branch-miniweek-event.classroom{background:rgba(141,111,210,.30)}
+    #branchMiniWeek .branch-miniweek-event:hover{filter:brightness(1.15)}
+    #branchMiniWeek .branch-miniweek-event-title{font-size:11px;font-weight:850;line-height:1.2;white-space:normal;overflow-wrap:anywhere}
+    #branchMiniWeek .branch-miniweek-event-time{font-size:9px;color:#cfc9d9;margin-top:3px;white-space:normal}
+    #branchMiniWeek .branch-miniweek-status{margin-top:9px;font-size:11px;color:#bdb7c8}
+    #branchMiniWeek .branch-miniweek-connect{border:0;border-radius:999px;padding:7px 11px;background:#8ef06c;color:#10391d;font-weight:900;cursor:pointer}
+    #branchMiniWeek .branch-miniweek-loading{grid-column:1/-1;padding:12px 0;color:#bdb7c8;font-size:12px}
+    #branchMiniWeek .branch-miniweek-noitems{padding:12px 0;color:#bdb7c8;font-size:12px}
+    #branchClassroomSummary{margin-top:12px;padding-top:11px;border-top:1px solid rgba(255,255,255,.11);display:flex;align-items:center;justify-content:space-between;gap:12px}
+    #branchClassroomSummary .branch-classroom-summary-title{font-size:11px;font-weight:900;letter-spacing:.12em;color:#8ef06c;text-transform:uppercase}
+    #branchClassroomSummary .branch-classroom-summary-text{font-size:11px;color:#d2ccd9;margin-top:3px}
+    #branchClassroomSummary .branch-classroom-summary-link{font-size:11px;font-weight:850;color:#8ef06c;text-decoration:none;white-space:nowrap}
+    @media(max-width:720px){
+      #branchMiniWeek .branch-miniweek-days{grid-template-columns:1fr 1fr}
+      #branchClassroomSummary{align-items:flex-start;flex-direction:column}
     }
-    .badge-stage .portal-badge {
-      width: 112% !important;
-      height: 112% !important;
-      max-width: none !important;
-      object-fit: cover !important;
-      object-position: center center !important;
-      position: relative;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-    }
-  </style>
 
-<style>
-.badge-stage .logo-shell{padding:0!important;overflow:hidden!important;border-radius:50%!important}
-.badge-stage .portal-badge{width:100%!important;height:100%!important;max-width:none!important;border-radius:50%!important;object-fit:cover!important;object-position:center!important;position:static!important;left:auto!important;top:auto!important;transform:none!important}
-</style>
-
-  <style>
-    /* Coded center logo: no separate image asset required. */
-    .badge-stage .logo-shell{
-      padding:0 !important;
-      overflow:hidden !important;
-      border-radius:50% !important;
-      background:radial-gradient(circle at 50% 38%, #173f5c 0%, #102f48 58%, #0c263b 100%) !important;
-      border:5px solid #fff !important;
-      box-shadow:
-        0 0 0 4px #8ea38d,
-        0 0 0 7px #f4f1ea,
-        0 16px 38px rgba(18,43,63,.16) !important;
+    .quick-links .google-quick-links-scroll{
+      height:210px;
+      max-height:210px;
+      overflow-y:auto;
+      padding-right:4px;
+      scrollbar-width:thin;
+      scrollbar-color:rgba(142,240,108,.55) rgba(255,255,255,.06);
     }
-    .coded-center-logo{
-      width:100%;
-      height:100%;
-      border-radius:50%;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      padding:14% 10% 12%;
-      text-align:center;
-      color:white;
-      background:
-        radial-gradient(circle at 50% 30%, rgba(255,255,255,.035), transparent 42%),
-        linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.06));
+    .quick-links .google-quick-links-scroll::-webkit-scrollbar{width:7px}
+    .quick-links .google-quick-links-scroll::-webkit-scrollbar-track{
+      background:rgba(255,255,255,.05);
+      border-radius:999px
     }
-    .center-branch-mark{
-      width:43%;
-      height:auto;
-      margin-bottom:4%;
-      overflow:visible;
+    .quick-links .google-quick-links-scroll::-webkit-scrollbar-thumb{
+      background:rgba(142,240,108,.48);
+      border-radius:999px
     }
-    .center-branch-mark path{
-      fill:none;
-      stroke:#b8c86a;
-      stroke-width:4.2;
-      stroke-linecap:round;
-      stroke-linejoin:round;
-    }
-    .center-school-name{
-      font-family:"Segoe UI",Arial,sans-serif;
-      font-size:clamp(18px,2vw,31px);
-      font-weight:300;
-      letter-spacing:.01em;
-      line-height:1.05;
-      color:#9a6aa1;
-      white-space:nowrap;
-    }
-    .center-motto{
-      margin-top:6%;
-      font-family:Georgia,"Times New Roman",serif;
-      font-size:clamp(12px,1.25vw,20px);
-      font-weight:500;
-      letter-spacing:.075em;
-      color:#c1cf68;
-      white-space:nowrap;
-    }
-  </style>
-
-
-  <style>
-    .microsoft-connect-btn{
-      width:100%;
-      margin-top:10px;
-      border:1px solid #d9e0e5;
-      border-radius:10px;
-      background:#fff;
-      color:#17324a;
-      padding:9px 11px;
-      font-weight:800;
-      cursor:pointer;
-    }
-    .microsoft-connect-btn:hover{background:#f4f7f5}
-    .microsoft-connect-btn.is-connected{
-      background:#eef5ee;
-      border-color:#a7bca6;
-      color:#38563d;
-    }
-    .microsoft-connect-status{
-      margin-top:7px;
-      font-size:11px;
-      line-height:1.35;
-      color:#6b7780;
-    }
-    .branch-inbox-card{padding:18px}
-    .branch-inbox-heading{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:12px;
-      padding-bottom:12px;
-      border-bottom:1px solid #e6e7e3;
-    }
-    .branch-inbox-heading a{
-      font-size:11px;
-      font-weight:800;
-      color:#345d86;
-      text-decoration:none;
-      white-space:nowrap;
-    }
-    .branch-inbox-count{
-      margin-top:4px;
-      color:#69757e;
-      font-size:12px;
-    }
-    .branch-inbox-count span{
-      color:#17324a;
-      font-size:22px;
-      font-weight:900;
-      margin-right:3px;
-    }
-    .branch-inbox-messages{display:grid;gap:8px;margin-top:11px}
-    .branch-inbox-message{
-      display:block;
-      padding:9px 10px;
-      border:1px solid #e5e8e6;
-      border-radius:10px;
-      background:#fbfcfa;
-      color:#17324a;
-      text-decoration:none;
-    }
-    .branch-inbox-message.is-unread{border-left:4px solid #819b7d;background:#f5f8f3}
-    .branch-inbox-message-top{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:8px;
-      font-size:10px;
-    }
-    .branch-inbox-message-top strong{
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-      font-size:11px;
-    }
-    .branch-inbox-message-top span{color:#879098;white-space:nowrap}
-    .branch-inbox-subject{
-      margin-top:4px;
-      font-size:11px;
-      line-height:1.3;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-    }
-    .branch-inbox-empty{padding:9px 0;color:#7b858c;font-size:11px}
-  </style>
-
-
-  <style>
-    .header-account-panel{
+    .quick-links .google-quick-link{
       display:flex;
       align-items:center;
       gap:10px;
+      min-height:42px
     }
-    .header-account-avatar{
-      width:36px;
-      height:36px;
-      border-radius:50%;
-      display:grid;
-      place-items:center;
-      flex:0 0 auto;
-      background:linear-gradient(135deg,#28485f,#789080);
-      color:#fff;
-      font-weight:900;
-      overflow:hidden;
-      background-size:cover;
-      background-position:center;
-      background-repeat:no-repeat;
+    .quick-links .google-quick-link img{
+      width:22px;
+      height:22px;
+      flex:0 0 22px;
+      border-radius:5px
     }
-    .header-account-copy{
-      display:flex;
-      flex-direction:column;
-      width:185px;
-      line-height:1.15;
-    }
-    .header-account-copy strong{color:#fff;font-size:12px}
-    .header-account-copy span{
-      color:#d8e2e7;
-      font-size:9px;
-      margin-top:2px;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-    }
-    .header-account-copy #accountStatus{
-      color:#c8d99c;
-      font-weight:800;
-    }
-    .header-account-actions{
-      display:flex;
-      gap:6px;
-    }
-    .header-account-btn{
-      border:1px solid rgba(255,255,255,.30);
-      border-radius:8px;
-      padding:7px 9px;
-      background:rgba(255,255,255,.08);
-      color:#fff;
-      font-size:9px;
-      font-weight:900;
-      cursor:pointer;
-      white-space:nowrap;
-    }
-    .header-account-btn:hover{background:rgba(255,255,255,.16)}
-    .header-account-btn.is-connected{
-      background:#edf4ea;
-      border-color:#b5c8aa;
-      color:#294835;
+    .quick-links .google-quick-link .google-quick-link-name{
+      flex:1;
+      min-width:0
     }
 
-    /* Keep the dashboard on one screen now that the duplicate agenda is gone. */
-    .right-rail{
-      align-self:start;
+    /* Center-logo hover assignment preview — fills the badge circle */
+    .badge-stage {
+      position: relative;
     }
 
-    @media (max-width:1180px){
-      .header-account-copy{display:none}
+    #branchAssignmentHover {
+      position: absolute;
+      inset: 5.5%;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 35%, rgba(44, 31, 83, .97), rgba(15, 10, 36, .985) 68%);
+      border: 1px solid rgba(142, 240, 108, .32);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.035), 0 18px 60px rgba(0,0,0,.34);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: scale(.965);
+      transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
+      z-index: 20;
+      overflow: hidden;
+      color: #fff;
     }
+
+    .badge-stage:hover #branchAssignmentHover,
+    .badge-stage:focus-within #branchAssignmentHover,
+    #branchAssignmentHover:hover {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: scale(1);
+    }
+
+    .branch-assignment-hover-shell {
+      position: absolute;
+      inset: 12% 10% 10%;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .branch-assignment-hover-header {
+      flex: 0 0 auto;
+      padding: 2px 10px 12px;
+      text-align: center;
+    }
+
+    .branch-assignment-hover-title {
+      font-size: clamp(13px, 1.25vw, 21px);
+      font-weight: 900;
+      letter-spacing: .09em;
+      color: #8ef06c;
+      line-height: 1.15;
+    }
+
+    .branch-assignment-hover-subtitle {
+      margin-top: 4px;
+      font-size: clamp(10px, .82vw, 13px);
+      font-weight: 700;
+      color: rgba(255,255,255,.68);
+    }
+
+    #branchAssignmentHoverList {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,.34) transparent;
+      padding: 0 7px 4px 2px;
+    }
+
+    #branchAssignmentHoverList::-webkit-scrollbar {
+      width: 7px;
+    }
+    #branchAssignmentHoverList::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    #branchAssignmentHoverList::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,.28);
+      border-radius: 999px;
+    }
+    #branchAssignmentHoverList::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,.42);
+    }
+
+    .branch-assignment-hover-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px 12px;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      margin-bottom: 7px;
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 13px;
+      background: rgba(255,255,255,.055);
+      color: #fff;
+      text-decoration: none;
+      transition: background .14s ease, border-color .14s ease;
+    }
+
+    .branch-assignment-hover-item:hover {
+      background: rgba(255,255,255,.10);
+      border-color: rgba(142,240,108,.28);
+    }
+
+    .branch-assignment-hover-main {
+      min-width: 0;
+    }
+
+    .branch-assignment-hover-name {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: clamp(11px, .92vw, 14px);
+      font-weight: 850;
+      line-height: 1.2;
+    }
+
+    .branch-assignment-hover-course {
+      display: block;
+      margin-top: 3px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: clamp(9px, .72vw, 11px);
+      font-weight: 650;
+      color: rgba(255,255,255,.62);
+    }
+
+    .branch-assignment-hover-due {
+      align-self: center;
+      max-width: 112px;
+      text-align: right;
+      font-size: clamp(9px, .72vw, 11px);
+      font-weight: 850;
+      line-height: 1.15;
+      color: #9c8cff;
+    }
+
+    .branch-assignment-hover-due.today {
+      color: #ff707f;
+    }
+
+    .branch-assignment-hover-due.tomorrow {
+      color: #ffbf55;
+    }
+
+    .branch-assignment-hover-empty {
+      padding: 28px 18px;
+      text-align: center;
+      color: rgba(255,255,255,.70);
+      font-size: 13px;
+    }
+
+    .branch-assignment-hover-footer {
+      flex: 0 0 auto;
+      padding: 8px 0 1px;
+      text-align: center;
+    }
+
+    .branch-assignment-hover-footer a {
+      color: #8ef06c;
+      font-size: clamp(10px, .76vw, 12px);
+      font-weight: 850;
+      text-decoration: none;
+    }
+
+    .branch-assignment-hover-footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 900px) {
+      .branch-assignment-hover-shell { inset: 11% 8% 9%; }
+      .branch-assignment-hover-item { padding: 8px 10px; }
+      .branch-assignment-hover-due { max-width: 88px; }
+    }
+
+
   </style>
-
-
-  <style>
-    .compact-resources{
-      padding:16px !important;
-      width:100%;
-      box-sizing:border-box;
-    }
-    .compact-resources .resource-row{
-      display:grid !important;
-      grid-template-columns:repeat(3, minmax(0,1fr)) !important;
-      gap:8px !important;
-      margin-top:10px !important;
-    }
-    .compact-resources .resource-row a{
-      min-width:0 !important;
-      padding:10px 5px !important;
-      height:76px !important;
-      border-radius:10px !important;
-      display:flex !important;
-      flex-direction:column !important;
-      align-items:center !important;
-      justify-content:center !important;
-      gap:6px !important;
-      text-align:center !important;
-    }
-    .compact-resources .resource-row img{
-      width:28px !important;
-      height:28px !important;
-      object-fit:contain !important;
-    }
-    .compact-resources .resource-row span{
-      font-size:9px !important;
-      line-height:1.1 !important;
-      white-space:normal !important;
-    }
-  </style>
-
-
-  <style>
-    /* Staff Resources: compact 4 x 2 layout, supports up to 8 tiles */
-    .compact-resources .resource-row{
-      grid-template-columns:repeat(4, minmax(0,1fr)) !important;
-      gap:6px !important;
-    }
-    .compact-resources .resource-row a{
-      height:62px !important;
-      padding:7px 3px !important;
-      gap:4px !important;
-    }
-    .compact-resources .resource-row img{
-      width:21px !important;
-      height:21px !important;
-    }
-    .compact-resources .resource-row span{
-      font-size:8px !important;
-      line-height:1.05 !important;
-    }
-  </style>
-
-
-  <style>
-    /* Smaller resource tiles, larger icons and labels */
-    .compact-resources .resource-row{
-      gap:6px !important;
-    }
-    .compact-resources .resource-row a{
-      height:52px !important;
-      padding:5px 3px !important;
-      gap:3px !important;
-      border-radius:8px !important;
-    }
-    .compact-resources .resource-row img{
-      width:26px !important;
-      height:26px !important;
-    }
-    .compact-resources .resource-row span{
-      font-size:9.5px !important;
-      font-weight:700 !important;
-      line-height:1.05 !important;
-    }
-  </style>
-
-  <style>
-    .left-rail .announcements-card{margin-top:16px;padding:16px 18px}
-    .left-rail .announcements-list{margin-top:8px}
-    .left-rail .announcement-status{font-size:11px;line-height:1.35}
-  </style>
-
-  <style>
-    /* Staff readability pass */
-    body{font-size:17px !important}
-
-    .card-title{font-size:15px !important;letter-spacing:.08em !important}
-
-    .today-card .today-date,
-    #todayDateMirror{font-size:20px !important}
-
-    .today-card p,
-    .announcement-status,
-    .announcements-list,
-    .branch-inbox-empty{font-size:13px !important;line-height:1.4 !important}
-
-    .quick-links a,
-    .quick-links span{font-size:15px !important}
-
-    .hero .eyebrow{font-size:14px !important}
-    .hero h1{font-size:44px !important}
-    .hero-helper{font-size:14px !important}
-    .hero-helper strong{font-size:15px !important}
-    blockquote{font-size:14px !important;line-height:1.35 !important}
-
-    .branch-inbox-count{font-size:13px !important}
-    .branch-inbox-count span{font-size:24px !important}
-    .branch-inbox-heading a{font-size:12px !important}
-    .branch-inbox-message-top{font-size:11px !important}
-    .branch-inbox-message-top strong{font-size:13px !important}
-    .branch-inbox-subject{font-size:13px !important}
-
-    .compact-resources .resource-row span{
-      font-size:11px !important;
-      font-weight:800 !important;
-    }
-
-    .header-account-copy strong{font-size:13px !important}
-    .header-account-copy span{font-size:11px !important}
-    .header-account-btn{font-size:11px !important}
-
-    .top-clock strong,
-    #clock{font-size:22px !important}
-    .top-clock span,
-    #date{font-size:11px !important}
-
-    footer{font-size:12px !important}
-  </style>
-
-
-  <style>
-    /* Extra-large staff readability */
-    body{font-size:19px !important}
-
-    .card-title{font-size:17px !important}
-    .today-card .today-date,#todayDateMirror{font-size:23px !important}
-    .today-card p,.announcement-status,.announcements-list,.branch-inbox-empty{
-      font-size:15px !important;line-height:1.45 !important
-    }
-
-    .quick-links a,.quick-links span{font-size:17px !important}
-
-    .hero .eyebrow{font-size:16px !important}
-    .hero h1{font-size:48px !important}
-    .hero-helper{font-size:16px !important}
-    .hero-helper strong{font-size:17px !important}
-    blockquote{font-size:16px !important;line-height:1.4 !important}
-
-    .branch-inbox-count{font-size:15px !important}
-    .branch-inbox-count span{font-size:27px !important}
-    .branch-inbox-heading a{font-size:14px !important}
-    .branch-inbox-message-top strong{font-size:15px !important}
-    .branch-inbox-message-top span{font-size:12px !important}
-    .branch-inbox-subject{font-size:15px !important}
-
-    .compact-resources .resource-row span{font-size:13px !important;font-weight:800 !important}
-
-    .header-account-copy strong{font-size:15px !important}
-    .header-account-copy span{font-size:12px !important}
-    .header-account-btn{font-size:13px !important;padding:8px 11px !important}
-
-    .top-clock strong,#clock{font-size:25px !important}
-    .top-clock span,#date{font-size:13px !important}
-    footer{font-size:14px !important}
-  </style>
-
-
-  <style>
-    /* Strong readability override for staff */
-    .today-card p{font-size:17px !important}
-    .quick-links a,.quick-links a span,.quick-links span{
-      font-size:18px !important;
-      font-weight:600 !important;
-    }
-
-    .announcements-card .card-title{font-size:17px !important}
-    .announcements-card .announcement-status,
-    .announcements-card .announcements-list{
-      font-size:15px !important;
-      line-height:1.4 !important;
-    }
-
-    .branch-inbox-heading .card-title{font-size:17px !important}
-    .branch-inbox-heading a{font-size:14px !important}
-    .branch-inbox-count{font-size:15px !important}
-    .branch-inbox-message-top strong{font-size:15px !important}
-    .branch-inbox-message-top span{font-size:13px !important}
-    .branch-inbox-subject{font-size:15px !important;line-height:1.3 !important}
-
-    .compact-resources .card-title{font-size:17px !important}
-    .compact-resources .resource-row span{
-      font-size:14px !important;
-      font-weight:800 !important;
-      line-height:1.1 !important;
-    }
-
-    .hero-helper{font-size:17px !important;line-height:1.3 !important}
-    .hero-helper strong{font-size:18px !important}
-    blockquote{font-size:17px !important;line-height:1.35 !important}
-
-    .header-account-copy strong{font-size:15px !important}
-    .header-account-copy span{font-size:13px !important}
-    .header-account-btn{font-size:13px !important}
-  </style>
-
-  <style>
-    /* Larger center logo without changing the surrounding layout */
-    .portal-badge{
-      width:390px !important;
-      height:390px !important;
-      max-width:42vw !important;
-      max-height:42vw !important;
-    }
-  </style>
-  <style>
-    /* XL center logo */
-    .portal-badge{
-      width:455px !important;
-      height:455px !important;
-      max-width:48vw !important;
-      max-height:48vw !important;
-    }
-  </style>
-
-  <style>
-    /* Actually enlarge center logo: override parent sizing constraints too */
-    .hero{
-      overflow:visible !important;
-    }
-    .hero-center,
-    .portal-badge-wrap,
-    .portal-badge-container{
-      width:auto !important;
-      max-width:none !important;
-      overflow:visible !important;
-    }
-    .portal-badge{
-      width:500px !important;
-      height:500px !important;
-      min-width:500px !important;
-      min-height:500px !important;
-      max-width:none !important;
-      max-height:none !important;
-      flex:0 0 500px !important;
-      transform:none !important;
-    }
-    .portal-badge svg,
-    .portal-badge img{
-      width:100% !important;
-      height:100% !important;
-    }
-  </style>
-
-
-  <style>
-    /* TRUE XL center circle: the limiting element is .badge-stage in styles.css */
-    .hero .badge-stage{
-      width:500px !important;
-      height:500px !important;
-      min-width:500px !important;
-      min-height:500px !important;
-      max-width:none !important;
-      aspect-ratio:1 / 1 !important;
-    }
-    .hero .badge-stage .logo-shell{
-      width:500px !important;
-      height:500px !important;
-    }
-    .hero .badge-stage .coded-center-logo{
-      width:100% !important;
-      height:100% !important;
-    }
-
-    /* Keep hover overlay sized to the enlarged circle */
-    .hero .badge-stage #branchAssignmentHover{
-      inset:3% !important;
-    }
-  </style>
-
-
-  <style>
-    /* Inbox: fit card height and make unread messages scrollable */
-    .branch-inbox-card{
-      max-height:320px !important;
-      overflow:hidden !important;
-      display:flex !important;
-      flex-direction:column !important;
-    }
-    .branch-inbox-heading{
-      flex:0 0 auto !important;
-    }
-    .branch-inbox-messages{
-      flex:1 1 auto !important;
-      min-height:0 !important;
-      max-height:210px !important;
-      overflow-y:auto !important;
-      overflow-x:hidden !important;
-      padding-right:4px !important;
-      scrollbar-width:thin;
-    }
-    .branch-inbox-message{
-      min-height:auto !important;
-      padding:10px 11px !important;
-    }
-    .branch-inbox-message-top{
-      gap:10px !important;
-    }
-    .branch-inbox-message-top strong{
-      max-width:70% !important;
-      overflow:hidden !important;
-      text-overflow:ellipsis !important;
-      white-space:nowrap !important;
-    }
-    .branch-inbox-subject{
-      white-space:nowrap !important;
-      overflow:hidden !important;
-      text-overflow:ellipsis !important;
-    }
-  </style>
-
-
-  <style>
-    .branch-inbox-messages{
-      max-height:205px !important;
-      overflow-y:scroll !important;
-      overscroll-behavior:contain;
-      -webkit-overflow-scrolling:touch;
-      scrollbar-gutter:stable;
-    }
-    .branch-inbox-messages::-webkit-scrollbar{
-      width:10px;
-    }
-    .branch-inbox-messages::-webkit-scrollbar-track{
-      background:#eef1ee;
-      border-radius:10px;
-    }
-    .branch-inbox-messages::-webkit-scrollbar-thumb{
-      background:#8da58b;
-      border-radius:10px;
-      border:2px solid #eef1ee;
-    }
-  </style>
-
-
-<style id="fullCircleCenterLogoOverride">
-  /* Make the logo itself become the full placeholder circle. */
-  .hero .badge-stage {
-    overflow: hidden !important;
-    border-radius: 50% !important;
-  }
-
-  .hero .badge-stage .logo-shell {
-    position: absolute !important;
-    inset: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    max-width: none !important;
-    max-height: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-    box-shadow: none !important;
-    background: transparent !important;
-    overflow: hidden !important;
-    border-radius: 50% !important;
-  }
-
-  .hero .badge-stage .logo-shell > img.portal-badge {
-    position: absolute !important;
-    top: 50% !important;
-    left: 50% !important;
-    width: 116% !important;
-    height: 116% !important;
-    max-width: none !important;
-    max-height: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    display: block !important;
-    object-fit: cover !important;
-    object-position: center !important;
-    border-radius: 50% !important;
-    transform: translate(-50%, -50%) !important;
-  }
-
-  /* Remove the old decorative placeholder rings so only the badge is visible. */
-  .hero .badge-stage::before,
-  .hero .badge-stage::after,
-  .hero .badge-stage .logo-shell::before,
-  .hero .badge-stage .logo-shell::after {
-    display: none !important;
-    content: none !important;
-  }
-</style>
-
-
-<style id="largerStaffResourceIcons">
-  /* Much larger Staff Resources icons. */
-  .right-rail .resource-grid .resource-icon {
-    font-size: 46px !important;
-    line-height: 1 !important;
-    min-width: 52px !important;
-    min-height: 52px !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    flex-shrink: 0 !important;
-  }
-</style>
-
-
-<style id="afterschoolTodayStyles">
-  .afterschool-today{
-    margin-top:16px;
-    padding-top:14px;
-    border-top:1px solid rgba(20,48,66,.12);
-  }
-  .afterschool-label{
-    font-size:12px;
-    font-weight:800;
-    letter-spacing:.12em;
-    color:#143042;
-    margin-bottom:8px;
-  }
-  .afterschool-status{
-    font-size:14px;
-    line-height:1.45;
-    color:#4f6470;
-  }
-  .afterschool-class{
-    margin-top:7px;
-    padding:7px 9px;
-    border-radius:9px;
-    background:rgba(146,166,139,.10);
-    color:#143042;
-  }
-  .afterschool-class strong{
-    display:block;
-    font-size:14px;
-  }
-  .afterschool-meta{
-    margin-top:2px;
-    font-size:12px;
-    color:#677985;
-  }
-</style>
-
-
-
-<style id="polishedAseAnnouncements">
-  #announcementsCard{position:relative;overflow:hidden;}
-  #announcementsCard .section-title,
-  #announcementsCard h2,
-  #announcementsCard h3{display:flex;align-items:center;gap:8px;}
-  #announcementsCard .section-title::before,
-  #announcementsCard h2::before,
-  #announcementsCard h3::before{content:"📣";font-size:16px;line-height:1;}
-
-  #afterschoolToday{
-    margin-top:10px!important;
-    max-height:250px!important;
-    overflow-y:auto!important;
-    padding-right:4px!important;
-    color:#143042!important;
-  }
-  #afterschoolToday::-webkit-scrollbar{width:6px;}
-  #afterschoolToday::-webkit-scrollbar-thumb{background:rgba(20,48,66,.18);border-radius:10px;}
-
-  .ase-duty-card{
-    display:flex;align-items:center;gap:10px;
-    padding:10px 11px;border-radius:12px;
-    background:rgba(105,87,214,.08);
-    margin-bottom:10px;
-  }
-  .ase-duty-icon{
-    width:30px;height:30px;flex:0 0 30px;
-    display:inline-flex;align-items:center;justify-content:center;
-    border-radius:50%;background:rgba(105,87,214,.13);
-    font-size:17px;
-  }
-  .ase-duty-name{font-size:15px;font-weight:800;color:#143042;}
-
-  .ase-section-title{
-    display:flex;align-items:center;gap:7px;
-    margin:4px 0 8px;padding-bottom:7px;
-    border-bottom:1px solid rgba(20,48,66,.10);
-    font-size:12px;font-weight:900;letter-spacing:.04em;
-    color:#143042;text-transform:uppercase;
-  }
-  .ase-prefix{color:#6658d8;font-weight:900;}
-
-  .ase-program{
-    display:grid;grid-template-columns:28px minmax(0,1fr);
-    gap:8px;align-items:start;padding:7px 4px;
-    border-bottom:1px solid rgba(20,48,66,.07);
-  }
-  .ase-program:last-child{border-bottom:0;}
-  .ase-program-icon{
-    width:28px;height:28px;display:flex;align-items:center;
-    justify-content:center;font-size:18px;line-height:1;
-  }
-  .ase-program-name{font-size:13px;line-height:1.25;font-weight:800;color:#143042;}
-  .ase-program-meta{margin-top:2px;font-size:11px;line-height:1.3;color:#677985;}
-  .ase-empty{padding:8px 2px;font-size:12px;color:#677985;}
-</style>
-
-
-<style id="resourceAndQuickLinkTightening">
-  /* Keep Quick Links compact now, but scroll when more links are added. */
-  .quick-links{
-    max-height:220px!important;
-    overflow-y:auto!important;
-    overflow-x:hidden!important;
-    padding-right:4px!important;
-  }
-  .quick-links::-webkit-scrollbar{width:6px;}
-  .quick-links::-webkit-scrollbar-thumb{
-    background:rgba(20,48,66,.18);
-    border-radius:10px;
-  }
-
-  /* Staff Resources can grow later without stretching the page. */
-  .right-rail .resource-grid{
-    max-height:250px!important;
-    overflow-y:auto!important;
-    padding-right:4px!important;
-  }
-  .right-rail .resource-grid::-webkit-scrollbar{width:6px;}
-  .right-rail .resource-grid::-webkit-scrollbar-thumb{
-    background:rgba(20,48,66,.18);
-    border-radius:10px;
-  }
-</style>
-
-
-<style id="v52ResourceTileLayout">
-  .right-rail .resource-grid{
-    display:grid!important;
-    grid-template-columns:1fr 1fr!important;
-    gap:10px!important;
-    max-height:390px!important; /* roughly 4 rows / 8 tiles */
-    overflow-y:auto!important;
-    overflow-x:hidden!important;
-    padding-right:4px!important;
-  }
-  .right-rail .resource-grid::-webkit-scrollbar{width:6px;}
-  .right-rail .resource-grid::-webkit-scrollbar-thumb{
-    background:rgba(20,48,66,.18);
-    border-radius:10px;
-  }
-</style>
-
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <img src="assets/staff-icon.jpg" class="brand-logo" alt="The Branch School">
-      <div class="brand-copy">
-        <div class="school-name">The Branch School</div>
-        <div class="dashboard-name">STAFF DASHBOARD</div>
-      </div>
-    </div>
+  <div class="left-stripes"></div>
+  <div class="right-stripes"></div>
 
-    <div class="topbar-right">
-      <div class="header-account-panel">
-        <div class="header-account-avatar" id="avatar">S</div>
-        <div class="header-account-copy">
-          <strong id="studentName">Staff Member</strong>
-          <span id="studentEmail">Sign in with Microsoft or Google</span>
-          <span id="accountStatus">Not connected</span>
+  <div class="pawmark paw-left-big" aria-hidden="true">
+    <i class="toe t1"></i><i class="toe t2"></i><i class="toe t3"></i><i class="toe t4"></i><i class="pad"></i>
+  </div>
+  <div class="pawmark paw-right-top" aria-hidden="true">
+    <i class="toe t1"></i><i class="toe t2"></i><i class="toe t3"></i><i class="toe t4"></i><i class="pad"></i>
+  </div>
+
+  <main class="dashboard">
+    <section class="left-column">
+      <header class="brand-head">
+        <img src="assets/bear-header.png" class="header-bear" alt="">
+        <div>
+          <div class="school">THE BRANCH SCHOOL</div>
+          <div class="portal">STUDENT PORTAL</div>
         </div>
-        <div class="header-account-actions">
-          <button type="button" id="branchMicrosoftConnect" class="header-account-btn">Microsoft 365</button>
-          
-        </div>
-      </div>
-      <div class="top-clock">
+      </header>
+
+      <div class="time-card">
         <strong id="clock">--:--</strong>
         <span id="date">Today</span>
       </div>
-    </div>
-  </header>
 
-  <main class="dashboard">
-    <section class="left-rail">
-      <section class="card today-card">
-        <div class="card-title"><span>▣</span>TODAY</div>
-        <div class="today-date" id="todayDateMirror">Loading date…</div>
-        <div class="today-copy">Your calendar and school resources, all in one place.
-        </div></div>
-      </section>
+      <form class="search" action="https://www.google.com/search" method="get">
+        <span class="search-icon">⌕</span>
+        <input name="q" type="search" autocomplete="off" autofocus placeholder="Search the web">
+        <button type="submit">G</button>
+      </form>
 
-      <section class="card quick-card">
-        <div class="card-title"><span>↗</span>QUICK LINKS</div>
-        <div class="quick-list">
-          <a href="https://mail.google.com/"><img src="https://www.google.com/s2/favicons?domain=mail.google.com&sz=64"><span>Gmail</span><b>›</b></a>
-<a href="https://calendar.google.com/"><img src="https://www.google.com/s2/favicons?domain=calendar.google.com&sz=64"><span>Google Calendar</span><b>›</b></a>
-<a href="https://classroom.google.com/"><img src="https://www.google.com/s2/favicons?domain=classroom.google.com&sz=64"><span>Google Classroom</span><b>›</b></a>
-<a href="https://drive.google.com/"><img src="https://www.google.com/s2/favicons?domain=drive.google.com&sz=64"><span>Google Drive</span><b>›</b></a>
+      <section class="panel shortcuts">
+        <div class="panel-title">MY SHORTCUTS</div>
+        <div class="shortcut-grid">
+          <a href="https://login.acceleratelearning.com/">
+            <img src="https://www.google.com/s2/favicons?domain=acceleratelearning.com&sz=128" alt="">
+            <b>STEMscopes</b>
+          </a>
+          <a href="https://learning.amplify.com/">
+            <img src="https://www.google.com/s2/favicons?domain=amplify.com&sz=128" alt="">
+            <b>Amplify</b>
+          </a>
+          <a href="https://www.savvasrealize.com/">
+            <img src="https://www.google.com/s2/favicons?domain=savvasrealize.com&sz=128" alt="">
+            <b>Savvas</b>
+          </a>
+          <a href="https://www.vhlcentral.com/">
+            <img src="https://www.google.com/s2/favicons?domain=vhlcentral.com&sz=128" alt="">
+            <b>VHL Central</b>
+          </a>
+          <a href="https://www.ixl.com/">
+            <img src="https://www.google.com/s2/favicons?domain=ixl.com&sz=128" alt="">
+            <b>IXL</b>
+          </a>
+          <a href="https://connected.mcgraw-hill.com/">
+            <img src="https://www.google.com/s2/favicons?domain=connected.mcgraw-hill.com&sz=128" alt="">
+            <b>Everyday Math</b>
+          </a>
         </div>
       </section>
 
-      <section class="card announcements-card" id="announcementsCard">
-        <div class="panel-title-row">
-          <div class="card-title">ANNOUNCEMENTS</div>
-          <span class="live-dot">LIVE</span>
-        </div>
-        <div id="afterschoolToday" class="afterschool-status">Loading...</div>
+      <section class="panel reminders weekly-agenda" id="weeklyAgendaPanel">
+        <div id="branchMiniWeek">
+          <div class="branch-miniweek-toolbar">
+            <div class="branch-miniweek-label">THIS WEEK</div>
+            <a class="branch-miniweek-open" href="https://calendar.google.com/calendar/u/0/r/week" target="_blank" rel="noopener noreferrer">Open Calendar ↗</a>
+          </div>
+          <div class="branch-miniweek-days" id="branchMiniWeekDays">
+            <div class="branch-miniweek-loading">Loading school week…</div>
+          </div>
+          <div class="branch-miniweek-status" id="branchMiniWeekStatus">Loading live schedule…</div>
+          <div id="branchClassroomSummary">
+            <div>
+              <div class="branch-classroom-summary-title">Classroom</div>
+              <div class="branch-classroom-summary-text" id="branchClassroomSummaryText">Loading assignments…</div>
+            </div>
+            <a class="branch-classroom-summary-link" id="branchClassroomSummaryLink" href="https://classroom.google.com/">View assignments ›</a>
+          </div>
         </div>
       </section>
     </section>
 
-    <section class="hero">
-      <div class="welcome-line"><span></span><b>WELCOME</b><span></span></div>
-      <h1>The Branch School</h1>
-
-      <div class="badge-stage" tabindex="0">
-        <div class="logo-shell">
-          <img
-            src="assets/staff-dashboard-center-logo.png?v=20260903-edge-to-edge-v1"
-            class="portal-badge"
-            alt="The Branch School Staff Dashboard"
-          >
-        </div>
-
+    <section class="center-column">
+      <div class="badge-stage">
+        <img src="assets/portal-badge.png" class="portal-badge" alt="The Branch School Student Portal">
         <div id="branchAssignmentHover" aria-live="polite">
           <div class="branch-assignment-hover-shell">
             <div class="branch-assignment-hover-header">
-              <div class="branch-assignment-hover-title">THIS WEEK</div>
-              <div class="branch-assignment-hover-subtitle" id="branchAssignmentHoverSubtitle">Two calendars • one weekly view</div>
+              <div class="branch-assignment-hover-title">ASSIGNMENTS DUE</div>
+              <div class="branch-assignment-hover-subtitle" id="branchAssignmentHoverSubtitle">Google Classroom</div>
             </div>
             <div id="branchAssignmentHoverList">
-              <div class="branch-assignment-hover-empty">Loading calendar…</div>
+              <div class="branch-assignment-hover-empty">Loading assignments…</div>
             </div>
             <div class="branch-assignment-hover-footer">
-              <a href="https://outlook.office.com/calendar/" target="_blank" rel="noopener noreferrer">Open My Calendar ↗</a>
+              <a href="https://classroom.google.com/" target="_blank" rel="noopener noreferrer">View all in Google Classroom ↗</a>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="logo-help">↗</div>
-      <div class="logo-caption">Hover over the logo to view<br><strong>This Week&apos;s Events</strong></div>
+      <section class="expectations-main">
+        <div><span class="symbol shield">✓</span><strong>BE RESPONSIBLE</strong></div>
+        <div><span class="symbol handshake">◆</span><strong>BE RESPECTFUL</strong></div>
+        <div><span class="symbol heart">♥</span><strong>BE SAFE</strong></div>
+      </section>
 
       <blockquote>
         “Excellence is not an act, but a habit.”
@@ -907,59 +366,74 @@
       </blockquote>
     </section>
 
-    <aside class="right-rail">
-      <section class="card branch-inbox-card" id="branchInboxCard">
-        <div class="branch-inbox-heading">
+    <aside class="right-column">
+      <section class="panel student-card">
+        <div class="panel-title">STUDENT INFO</div>
+        <div class="student-main">
+          <div class="avatar" id="avatar">S</div>
           <div>
-            <div class="card-title">OUTLOOK INBOX</div>
-            <div class="branch-inbox-count"><span id="branchInboxUnread">—</span> messages</div>
+            <h3 id="studentName">Student</h3>
+            <span id="studentEmail">Signed in to Chrome</span>
+            <small>The Branch School</small>
           </div>
-          <a id="branchInboxOpen" href="https://outlook.office.com/mail/" target="_blank" rel="noopener noreferrer">Open Outlook ↗</a>
         </div>
-        <div id="branchInboxMessages" class="branch-inbox-messages">
-          <div class="branch-inbox-empty">Connect Microsoft 365 to see your inbox.</div>
+        <div class="student-status">
+          <span>School account</span>
+          <b id="accountStatus">Checking…</b>
+        </div>
+        <a class="schedule-btn" href="https://calendar.google.com/calendar/u/0/r/day">View My Schedule ›</a>
+      </section>
+
+
+
+      <section class="panel announcements-card" id="announcementsCard">
+        <div class="panel-title-row">
+          <div class="panel-title">ANNOUNCEMENTS</div>
+          <span class="live-dot">LIVE</span>
+        </div>
+        <div id="announcementsList" class="announcements-list">
+          <div class="announcement-status">Checking for announcements…</div>
         </div>
       </section>
-<section class="resources card compact-resources">
-      <div class="card-title"><span>▱</span>STAFF RESOURCES</div>
-      <div class="resource-row">
-        <a target="_blank" rel="noopener noreferrer" href="https://the-branch-school-spirit-store.myspreadshop.com/"><span class="resource-icon" aria-hidden="true">★</span><span>Branch Spirit Store</span></a>
-<a target="_blank" rel="noopener noreferrer" href="assets/phoneextensions.html"><span class="resource-icon" aria-hidden="true">☎</span><span>Phone Extensions</span></a>
-<a target="_blank" rel="noopener noreferrer" href="https://www.thebranchschool.org/parents/order-lunch"><span class="resource-icon" aria-hidden="true">🍽</span><span>Simply Fresh Lunch Order</span></a>
-<a target="_blank" rel="noopener noreferrer" href="https://sis.factsmgt.com/accounts/"><span class="resource-icon" aria-hidden="true">🎓</span><span>FACTS</span></a>
-<a target="_blank" rel="noopener noreferrer" href="https://thebranchschool.org"><span class="resource-icon" aria-hidden="true">🏫</span><span>The Branch School Website</span></a>
-<a target="_blank" rel="noopener noreferrer" href="https://www.thebranchschool.org/staff/bear-essentials-archive"><span class="resource-icon" aria-hidden="true">🐻</span><span>Bear Essentials</span></a>
-<a target="_blank" rel="noopener noreferrer" href="https://email.thebranchschoolorg.myenotice.com/c/eJxkzzFyhSAQgOHTQOngggoFRRqrdDmAs-CqJApvYH2Z3D7z2uQE__fHkhkjL2n1Rg3OKrl6t65knCTfT9YOYJyd5OHVqMwQLCoAhzAq3MBoR25aRzWQQ5n8iA6DC8GqAEsPAVTfa62FUWeJeB6lcXdhOuXpD-ZHE_pNwCxgrtTKXSO1bksZz5aYukwsYE4X7tQEzM9-spMGYycjYOaDQsUcjxaPUs5SdwFzyz98jaTv_YYQ2_b5FaqA-eMOjRPfTO-pcQ_dY93ki5Hy_vq2Gkw_yOpxrQlzF2r5zsKoP42u1F2yz4XTliJyKnlpVJ8pkmTKmHnJeJH_T5NPD78BAAD__w92eDM"><span class="resource-icon" aria-hidden="true">👥</span><span>Substitute List</span></a>
-<a target="_blank" rel="noopener noreferrer" href="https://email.thebranchschoolorg.myenotice.com/c/eJxk0E1uwyAQxfHTwK4WHn_BgkU3PkAuYA0wtqlsSGDi9PhVumwP8PR--vucGD0vMdheDUYrGawJgXojybaT1gP0Rk9yt-u44hDagKPRTgVvHGnvXHCj16AGI6Md0aAzzmnlYGnBgWrbrutEr47s8dhz5ebEeMjD7sz3KrpPAbOAuVDNz-KpNmtMeNTI1CRiAXM8caMqYL7aSU9dp_Q4CJh5J1cw-b36Pecjl03A_HDbdbziV1XfQ6mP_Z5-lzeKp3uWSiclXm70eFLlBRSMH6Bgau5hlW9VTNs7g-6gbwdZLIYSMTWu5FcSvfpz2eSySbYpc1yjR445LZXKFT1JpoSJl4Qn2f9SeVn4CQAA___56H6j"><span class="resource-icon" aria-hidden="true">💳</span><span>Staff Reimbursement</span></a>
-<a target="_blank" rel="noopener noreferrer" href="https://email.thebranchschoolorg.myenotice.com/c/eJxcj8HK5CAQhJ9Gj8G0JjEHDwtDbvsModO2o2B0SZqZ11-yp-U_FVTxUXzUmyDJXmJwZlq90TGsMbJbNYdx8X4Ct_pF5zCTSW5xROhTSmwSJaY5jmQTsFtQlzDjisd6HN4csI9wgBlHa61ypnbCmvstw4ml6hqyyJ9b2V8KNgXbXe4hIcl9vmWgfirYCCu3iNezZq71_8puEYWVfRmvYILNjP8CDMwK5k_hr7Kv371J1s9dae_Hz1tw46SvgPEq2Ibj6t-mnJHMx4WN8k259zr0660ltC4lFUIpve03X59CrIUbNtkbnhx-YA_1CfA3AAD__4cibd0"><span class="resource-icon" aria-hidden="true">📅</span><span>Staff Calendar</span></a>
-<a target="_blank" rel="noopener noreferrer" href="https://email.thebranchschoolorg.myenotice.com/c/eJxcz7mO2zAUheGnIbsIXCWqYGEkkZMYyNI4SBqBy5XERCI91LWNefuB2qkPPuD8oWR0AccUrWK6N4xG28cIqqdgeWeMFqo3HV1sr5XXLWde6AnkFBVw7cNkhNLtFGNLk21d73zvvWFejFx4wTiXUhLF1hLcupQdm82lla52QbztRJ6IGIgYYgl7M5cyr9CEshExTKVu-7EQMfDhw9f_8cvf-89t_HzVP2b1-3w746_L99PrvxnH7so-fgtdNH8uMxHDI8Hz4EQOEBOOFV7usCNEIj9hvQM9LqQ8H81GCsU1rdbFmlxufC3PTBTDBXx1OSx7WEpZm1JnijYXTFMKDlPJ4w71kQJQhOwyjtltYN-xQz2seAsAAP__BGR2Ag"><span class="resource-icon" aria-hidden="true">📝</span><span>Event Form</span></a>
-<a target="_blank" rel="noopener noreferrer" href="https://email.thebranchschoolorg.myenotice.com/c/eJxszr1uwyAUxfGngS0Wnw4MDF3yGtYFrgOSAy3cxq9feehSdTrT_6eTeiNItNUcjLDeCZ6DzxmN5xjk3TmrjHd3XkJUOjlrVuv0mtFIvboVU5IGswXjDa9hBQ_Rx-hEVJtUUQkptdbMiKMnOEqftLygHvwIhehzMv3B1IOpx3meCxWMA1oqM5Xej6WPJ1OPSbDvv3uDOLElvA38-sZJ_MJqe17vnVZGWj4C5FGhLXH0szEj_mE5hdap7jUB1d62ieNdE3LCBo22Bi8Mf7Kregf1EwAA__-HEmUH"><span class="resource-icon" aria-hidden="true">🗓️</span><span>Staff Absence Request</span></a>
-<a target="_blank" rel="noopener noreferrer" href="https://tbstechhelp.weebly.com/"><span class="resource-icon" aria-hidden="true">🛠</span><span>TBS Support Page</span></a>
-      </div>
-    </section>
+
+      <section class="panel quick-links">
+        <div class="panel-title">GOOGLE QUICK LINKS</div>
+        <div class="google-quick-links-scroll">
+          <a class="google-quick-link" href="https://classroom.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=classroom.google.com&sz=64" alt="">
+            <span class="google-quick-link-name">Google Classroom</span><span>›</span>
+          </a>
+          <a class="google-quick-link" href="https://mail.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=mail.google.com&sz=64" alt="">
+            <span class="google-quick-link-name">Gmail</span><span>›</span>
+          </a>
+          <a class="google-quick-link" href="https://drive.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=drive.google.com&sz=64" alt="">
+            <span class="google-quick-link-name">Google Drive</span><span>›</span>
+          </a>
+          <a class="google-quick-link" href="https://docs.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=docs.google.com&sz=64" alt="">
+            <span class="google-quick-link-name">Google Docs</span><span>›</span>
+          </a>
+          <a class="google-quick-link" href="https://slides.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=slides.google.com&sz=64" alt="">
+            <span class="google-quick-link-name">Google Slides</span><span>›</span>
+          </a>
+          <a class="google-quick-link" href="https://sheets.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=sheets.google.com&sz=64" alt="">
+            <span class="google-quick-link-name">Google Sheets</span><span>›</span>
+          </a>
+          <a class="google-quick-link" href="https://calendar.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=calendar.google.com&sz=64" alt="">
+            <span class="google-quick-link-name">Google Calendar</span><span>›</span>
+          </a>
+        </div>
+      </section>
     </aside>
-</main>
+  </main>
 
-  <footer>
-    <span>Loving to Learn. Learning to Lead. Leading with Love.</span>
-    <b>thebranchschool.org</b>
-  </footer>
-
-  
-  <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@4.25.0/lib/msal-browser.min.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="config.js"></script>
-  <script src="app.js?v=20260910-exchange-only-v59"></script>
-  <script>
-    // Mirror the app's date into the TODAY card without changing the existing app.js clock logic.
-    const mirrorDate = () => {
-      const source = document.getElementById("date");
-      const target = document.getElementById("todayDateMirror");
-      if (source && target && source.textContent) target.textContent = source.textContent;
-    };
-    setInterval(mirrorDate, 500);
-    mirrorDate();
-
-
-  </script>
+  <script src="app.js?v=20260827-2013"></script>
 </body>
 </html>
