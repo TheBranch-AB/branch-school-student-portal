@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>The Branch School Student Portal</title>
+  <link rel="stylesheet" href="styles.css">
+
+  <style id="branchMiniWeekBaseStyles">
+    #branchMiniWeek{color:#fff}
+    #branchMiniWeek .branch-miniweek-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    #branchMiniWeek .branch-miniweek-label{font-size:12px;font-weight:900;letter-spacing:.14em;color:#8ef06c}
+    #branchMiniWeek .branch-miniweek-open{font-size:12px;font-weight:800;color:#8ef06c;text-decoration:none;white-space:nowrap}
+    #branchMiniWeek .branch-miniweek-open:hover{text-decoration:underline}
+    #branchMiniWeek .branch-miniweek-days{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px}
+    #branchMiniWeek .branch-miniweek-day{min-width:0;border:1px solid rgba(255,255,255,.13);border-radius:14px;background:rgba(255,255,255,.045);padding:10px;min-height:112px}
+    #branchMiniWeek .branch-miniweek-day.is-today{border-color:rgba(142,240,108,.85);background:rgba(142,240,108,.10)}
+    #branchMiniWeek .branch-miniweek-dayname{font-size:10px;font-weight:900;letter-spacing:.09em;color:#bdb7c8;text-transform:uppercase}
+    #branchMiniWeek .branch-miniweek-date{font-size:22px;font-weight:900;line-height:1.1;margin:2px 0 8px}
+    #branchMiniWeek .branch-miniweek-events{display:grid;gap:6px}
+    #branchMiniWeek .branch-miniweek-event{display:block;width:100%;border:0;text-align:left;border-radius:9px;padding:7px;background:rgba(142,240,108,.14);color:#fff;overflow:hidden;cursor:pointer;font:inherit}
+    #branchMiniWeek .branch-miniweek-event.classroom{background:rgba(141,111,210,.30)}
+    #branchMiniWeek .branch-miniweek-event:hover{filter:brightness(1.15)}
+    #branchMiniWeek .branch-miniweek-event-title{font-size:11px;font-weight:850;line-height:1.2;white-space:normal;overflow-wrap:anywhere}
+    #branchMiniWeek .branch-miniweek-event-time{font-size:9px;color:#cfc9d9;margin-top:3px;white-space:normal}
+    #branchMiniWeek .branch-miniweek-status{margin-top:9px;font-size:11px;color:#bdb7c8}
+    #branchMiniWeek .branch-miniweek-connect{border:0;border-radius:999px;padding:7px 11px;background:#8ef06c;color:#10391d;font-weight:900;cursor:pointer}
+    #branchMiniWeek .branch-miniweek-loading{grid-column:1/-1;padding:12px 0;color:#bdb7c8;font-size:12px}
+    #branchMiniWeek .branch-miniweek-noitems{padding:12px 0;color:#bdb7c8;font-size:12px}
+    #branchClassroomSummary{margin-top:12px;padding-top:11px;border-top:1px solid rgba(255,255,255,.11);display:flex;align-items:center;justify-content:space-between;gap:12px}
+    #branchClassroomSummary .branch-classroom-summary-title{font-size:11px;font-weight:900;letter-spacing:.12em;color:#8ef06c;text-transform:uppercase}
+    #branchClassroomSummary .branch-classroom-summary-text{font-size:11px;color:#d2ccd9;margin-top:3px}
+    #branchClassroomSummary .branch-classroom-summary-link{font-size:11px;font-weight:850;color:#8ef06c;text-decoration:none;white-space:nowrap}
+    @media(max-width:720px){
+      #branchMiniWeek .branch-miniweek-days{grid-template-columns:1fr 1fr}
+      #branchClassroomSummary{align-items:flex-start;flex-direction:column}
+    }
+
+    .quick-links .google-quick-links-scroll{
+      height:210px;
+      max-height:210px;
+      overflow-y:auto;
+      padding-right:4px;
+      scrollbar-width:thin;
+      scrollbar-color:rgba(142,240,108,.55) rgba(255,255,255,.06);
+    }
+    .quick-links .google-quick-links-scroll::-webkit-scrollbar{width:7px}
+    .quick-links .google-quick-links-scroll::-webkit-scrollbar-track{
+      background:rgba(255,255,255,.05);
+      border-radius:999px
+    }
+    .quick-links .google-quick-links-scroll::-webkit-scrollbar-thumb{
+      background:rgba(142,240,108,.48);
+      border-radius:999px
+    }
+    .quick-links .google-quick-link{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-height:42px
+    }
+    .quick-links .google-quick-link img{
+      width:22px;
+      height:22px;
+      flex:0 0 22px;
+      border-radius:5px
+    }
+    .quick-links .google-quick-link .google-quick-link-name{
+      flex:1;
+      min-width:0
+    }
+
+    /* Center-logo hover assignment preview — fills the badge circle */
+    .badge-stage {
+      position: relative;
+    }
+
+    #branchAssignmentHover {
+      position: absolute;
+      inset: 5.5%;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 35%, rgba(44, 31, 83, .97), rgba(15, 10, 36, .985) 68%);
+      border: 1px solid rgba(142, 240, 108, .32);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.035), 0 18px 60px rgba(0,0,0,.34);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: scale(.965);
+      transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
+      z-index: 20;
+      overflow: hidden;
+      color: #fff;
+    }
+
+    .badge-stage:hover #branchAssignmentHover,
+    .badge-stage:focus-within #branchAssignmentHover,
+    #branchAssignmentHover:hover {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: scale(1);
+    }
+
+    .branch-assignment-hover-shell {
+      position: absolute;
+      inset: 12% 10% 10%;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .branch-assignment-hover-header {
+      flex: 0 0 auto;
+      padding: 2px 10px 12px;
+      text-align: center;
+    }
+
+    .branch-assignment-hover-title {
+      font-size: clamp(13px, 1.25vw, 21px);
+      font-weight: 900;
+      letter-spacing: .09em;
+      color: #8ef06c;
+      line-height: 1.15;
+    }
+
+    .branch-assignment-hover-subtitle {
+      margin-top: 4px;
+      font-size: clamp(10px, .82vw, 13px);
+      font-weight: 700;
+      color: rgba(255,255,255,.68);
+    }
+
+    #branchAssignmentHoverList {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,.34) transparent;
+      padding: 0 7px 4px 2px;
+    }
+
+    #branchAssignmentHoverList::-webkit-scrollbar {
+      width: 7px;
+    }
+    #branchAssignmentHoverList::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    #branchAssignmentHoverList::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,.28);
+      border-radius: 999px;
+    }
+    #branchAssignmentHoverList::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,.42);
+    }
+
+    .branch-assignment-hover-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px 12px;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      margin-bottom: 7px;
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 13px;
+      background: rgba(255,255,255,.055);
+      color: #fff;
+      text-decoration: none;
+      transition: background .14s ease, border-color .14s ease;
+    }
+
+    .branch-assignment-hover-item:hover {
+      background: rgba(255,255,255,.10);
+      border-color: rgba(142,240,108,.28);
+    }
+
+    .branch-assignment-hover-main {
+      min-width: 0;
+    }
+
+    .branch-assignment-hover-name {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: clamp(11px, .92vw, 14px);
+      font-weight: 850;
+      line-height: 1.2;
+    }
+
+    .branch-assignment-hover-course {
+      display: block;
+      margin-top: 3px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: clamp(9px, .72vw, 11px);
+      font-weight: 650;
+      color: rgba(255,255,255,.62);
+    }
+
+    .branch-assignment-hover-due {
+      align-self: center;
+      max-width: 112px;
+      text-align: right;
+      font-size: clamp(9px, .72vw, 11px);
+      font-weight: 850;
+      line-height: 1.15;
+      color: #9c8cff;
+    }
+
+    .branch-assignment-hover-due.today {
+      color: #ff707f;
+    }
+
+    .branch-assignment-hover-due.tomorrow {
+      color: #ffbf55;
+    }
+
+    .branch-assignment-hover-empty {
+      padding: 28px 18px;
+      text-align: center;
+      color: rgba(255,255,255,.70);
+      font-size: 13px;
+    }
+
+    .branch-assignment-hover-footer {
+      flex: 0 0 auto;
+      padding: 8px 0 1px;
+      text-align: center;
+    }
+
+    .branch-assignment-hover-footer a {
+      color: #8ef06c;
+      font-size: clamp(10px, .76vw, 12px);
+      font-weight: 850;
+      text-decoration: none;
+    }
+
+    .branch-assignment-hover-footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 900px) {
+      .branch-assignment-hover-shell { inset: 11% 8% 9%; }
+      .branch-assignment-hover-item { padding: 8px 10px; }
+      .branch-assignment-hover-due { max-width: 88px; }
+    }
+
+
+  </style>
+<style id="studentScrollableCalendar">
+#branchMiniWeekDays{max-height:220px;overflow-y:auto;overflow-x:hidden;padding-right:6px;overscroll-behavior:contain;scrollbar-width:thin}
+#branchMiniWeekDays::-webkit-scrollbar{width:6px}
+#branchMiniWeekDays::-webkit-scrollbar-thumb{background:rgba(255,255,255,.24);border-radius:999px}
+#branchMiniWeekDays::-webkit-scrollbar-track{background:transparent}
+</style>
+<style id="branchBoldModernTheme">
+:root{--green:#004b2f;--green2:#00653a;--lime:#72bf44;--purple:#563095;--cream:#fbf8ef;--ink:#073a32}
+html,body{min-height:100%;background:#003d28!important}
+body{color:var(--cream)!important;background:radial-gradient(circle at 50% 38%,rgba(114,191,68,.14),transparent 27%),linear-gradient(120deg,#004326 0%,#006238 45%,#00462f 72%,#24103e 100%)!important}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;background:linear-gradient(135deg,transparent 0 79%,rgba(86,48,149,.34) 79% 83%,transparent 83%);z-index:0}
+header,.portal-header,main{position:relative;z-index:1}
+.panel,.reminders,.quick-links,.student-card,.announcements-card{background:rgba(255,253,247,.97)!important;color:var(--ink)!important;border:1px solid rgba(255,255,255,.6)!important;box-shadow:0 16px 36px rgba(0,25,15,.20)!important;border-radius:20px!important}
+.panel-title,.panel-title-row,.branch-miniweek-label,.branch-classroom-summary-title{color:var(--green)!important}
+.panel a,.branch-miniweek-open,.branch-classroom-summary-link{color:var(--green2)!important}
+.live-dot,.schedule-btn,.connect-btn{background:var(--green)!important;color:#fff!important;border-color:var(--green)!important}
+.center-column{position:relative!important}
+.center-column:before{content:"";position:absolute;left:50%;top:44%;width:min(620px,92%);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;z-index:-1;background:radial-gradient(circle,rgba(0,40,25,.04) 0 42%,rgba(0,35,22,.18) 43% 56%,transparent 57%)}
+.badge-stage{background:transparent!important;border:none!important;box-shadow:none!important}
+.portal-badge{filter:drop-shadow(0 22px 28px rgba(0,20,10,.32))}
+.expectations-main{color:#fff!important;text-shadow:0 2px 10px rgba(0,0,0,.25)}
+.expectations-main .symbol{background:rgba(255,255,255,.1)!important;border-color:rgba(114,191,68,.65)!important;color:var(--lime)!important}
+blockquote{background:rgba(0,48,30,.72)!important;border:1px solid rgba(114,191,68,.38)!important;color:#fff!important;box-shadow:0 12px 28px rgba(0,20,10,.18)!important}
+blockquote small{color:var(--lime)!important}
+.branch-miniweek-day,.branch-miniweek-event{background:#f2f7eb!important;border-color:#dcebcf!important;color:var(--ink)!important}
+.branch-miniweek-event:hover{background:#e7f3db!important}
+#branchAssignmentHover .branch-assignment-hover-shell{background:rgba(251,248,239,.99)!important;color:var(--ink)!important;border:2px solid rgba(114,191,68,.65)!important;box-shadow:0 24px 60px rgba(0,24,14,.32)!important}
+.branch-assignment-hover-header{background:linear-gradient(135deg,var(--green),var(--green2))!important;color:#fff!important}
+.branch-assignment-hover-title,.branch-assignment-hover-subtitle{color:#fff!important}
+.student-main h3{color:var(--green)!important}
+#studentEmail,.student-main span,.student-main small{color:#587066!important}
+.avatar{background:linear-gradient(135deg,var(--green),var(--purple))!important;color:#fff!important;border:2px solid var(--lime)!important}
+#accountStatus{color:var(--green2)!important}
+.announcement-item,.announcement{border-left-color:var(--lime)!important;background:#f7f5ee!important}
+header,.portal-header{background:rgba(0,61,38,.9)!important;border-bottom:1px solid rgba(255,255,255,.1)!important;box-shadow:0 8px 24px rgba(0,30,18,.12)!important}
+header h1,header h2,header strong,.portal-header h1,.portal-header strong{color:#fff!important}
+header small,.portal-header small{color:var(--lime)!important}
+*{scrollbar-width:thin;scrollbar-color:rgba(114,191,68,.8) transparent}
+*::-webkit-scrollbar{width:8px;height:8px}*::-webkit-scrollbar-thumb{background:rgba(114,191,68,.8);border-radius:10px}
+</style>
+</head>
+<body>
+  <div class="left-stripes"></div>
+  <div class="right-stripes"></div>
+
+  <div class="pawmark paw-left-big" aria-hidden="true">
+    <i class="toe t1"></i><i class="toe t2"></i><i class="toe t3"></i><i class="toe t4"></i><i class="pad"></i>
+  </div>
+  <div class="pawmark paw-right-top" aria-hidden="true">
+    <i class="toe t1"></i><i class="toe t2"></i><i class="toe t3"></i><i class="toe t4"></i><i class="pad"></i>
+  </div>
+
+  <main class="dashboard">
+    <section class="left-column">
+      <header class="brand-head">
+        <img src="assets/bear-header.png" class="header-bear" alt="">
+        <div>
+          <div class="school">THE BRANCH SCHOOL</div>
+          <div class="portal">STUDENT PORTAL</div>
+        </div>
+      </header>
+
+      <div class="time-card">
+        <strong id="clock">--:--</strong>
+        <span id="date">Today</span>
+      </div>
+
+      <form class="search" action="https://www.google.com/search" method="get">
+        <span class="search-icon">⌕</span>
+        <input name="q" type="search" autocomplete="off" autofocus placeholder="Search the web">
+        <button type="submit">G</button>
+      </form>
+
+      <section class="panel shortcuts">
+        <div class="panel-title">MY SHORTCUTS</div>
+        <div class="shortcut-grid">
+          <a href="https://login.acceleratelearning.com/">
+            <img src="https://www.google.com/s2/favicons?domain=acceleratelearning.com&sz=128" alt="">
+            <b>STEMscopes</b>
+          </a>
+          <a href="https://learning.amplify.com/">
+            <img src="https://www.google.com/s2/favicons?domain=amplify.com&sz=128" alt="">
+            <b>Amplify</b>
+          </a>
+          <a href="https://www.savvasrealize.com/">
+            <img src="https://www.google.com/s2/favicons?domain=savvasrealize.com&sz=128" alt="">
+            <b>Savvas</b>
+          </a>
+          <a href="https://www.vhlcentral.com/">
+            <img src="https://www.google.com/s2/favicons?domain=vhlcentral.com&sz=128" alt="">
+            <b>VHL Central</b>
+          </a>
+          <a href="https://www.ixl.com/">
+            <img src="https://www.google.com/s2/favicons?domain=ixl.com&sz=128" alt="">
+            <b>IXL</b>
+          </a>
+          <a href="https://connected.mcgraw-hill.com/">
+            <img src="https://www.google.com/s2/favicons?domain=connected.mcgraw-hill.com&sz=128" alt="">
+            <b>Everyday Math</b>
+          </a>
+        </div>
+      </section>
+
+      <section class="panel reminders weekly-agenda" id="weeklyAgendaPanel">
+        <div id="branchMiniWeek">
+          <div class="branch-miniweek-toolbar">
+            <div class="branch-miniweek-label">THIS WEEK</div>
+            <a class="branch-miniweek-open" href="https://calendar.google.com/calendar/u/0/r/week" target="_blank" rel="noopener noreferrer">Open Calendar ↗</a>
+          </div>
+          <div class="branch-miniweek-days" id="branchMiniWeekDays">
+            <div class="branch-miniweek-loading">Loading school week…</div>
+          </div>
+          <div class="branch-miniweek-status" id="branchMiniWeekStatus">Loading live schedule…</div>
+          <div id="branchClassroomSummary">
+            <div>
+              <div class="branch-classroom-summary-title">Classroom</div>
+              <div class="branch-classroom-summary-text" id="branchClassroomSummaryText">Loading assignments…</div>
+            </div>
+            <a class="branch-classroom-summary-link" id="branchClassroomSummaryLink" href="https://classroom.google.com/">View assignments ›</a>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section class="center-column">
+      <div class="badge-stage">
+        <img src="assets/branch-bear.png" class="portal-badge" alt="The Branch School Student Portal">
+        <div id="branchAssignmentHover" aria-live="polite">
+          <div class="branch-assignment-hover-shell">
+            <div class="branch-assignment-hover-header">
+              <div class="branch-assignment-hover-title">ASSIGNMENTS DUE</div>
+              <div class="branch-assignment-hover-subtitle" id="branchAssignmentHoverSubtitle">Google Classroom</div>
+            </div>
+            <div id="branchAssignmentHoverList">
+              <div class="branch-assignment-hover-empty">Loading assignments…</div>
+            </div>
+            <div class="branch-assignment-hover-footer">
+              <a href="https://classroom.google.com/" target="_blank" rel="noopener noreferrer">View all in Google Classroom ↗</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section class="expectations-main">
+        <div><span class="symbol shield">✓</span><strong>BE RESPONSIBLE</strong></div>
+        <div><span class="symbol handshake">◆</span><strong>BE RESPECTFUL</strong></div>
+        <div><span class="symbol heart">♥</span><strong>BE SAFE</strong></div>
+      </section>
+
+      <blockquote>
+        “Excellence is not an act, but a habit.”
+        <small>— Aristotle</small>
+      </blockquote>
+    </section>
+
+    <aside class="right-column">
+      <section class="panel student-card">
+        <div class="panel-title">STUDENT INFO</div>
+        <div class="student-main">
+          <div class="avatar" id="avatar">S</div>
+          <div>
+            <h3 id="studentName">Student</h3>
+            <span id="studentEmail">Signed in to Chrome</span>
+            <small>The Branch School</small>
+          </div>
+        </div>
+        <div class="student-status">
+          <span>School account</span>
+          <b id="accountStatus">Checking…</b>
+        </div>
+        <a class="schedule-btn" href="https://calendar.google.com/calendar/u/0/r/day">View My Schedule ›</a>
+      </section>
+
+
+
+      <section class="panel announcements-card" id="announcementsCard">
+        <div class="panel-title-row">
+          <div class="panel-title">ANNOUNCEMENTS</div>
+          <span class="live-dot">LIVE</span>
+        </div>
+        <div id="announcementsList" class="announcements-list">
+          <div class="announcement-status">Checking for announcements…</div>
+        </div>
+      </section>
+
+      <section class="panel quick-links">
+        <div class="panel-title">GOOGLE QUICK LINKS</div>
+        <div class="google-quick-links-scroll">
+          <a class="google-quick-link" href="https://classroom.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=classroom.google.com&sz=64" alt="">
+            <span class="google-quick-link-name">Google Classroom</span><span>›</span>
+          </a>
+          <a class="google-quick-link" href="https://mail.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=mail.google.com&sz=64" alt="">
+            <span class="google-quick-link-name">Gmail</span><span>›</span>
+          </a>
+          <a class="google-quick-link" href="https://drive.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=drive.google.com&sz=64" alt="">
+            <span class="google-quick-link-name">Google Drive</span><span>›</span>
+          </a>
+          <a class="google-quick-link" href="https://docs.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=docs.google.com&sz=64" alt="">
+            <span class="google-quick-link-name">Google Docs</span><span>›</span>
+          </a>
+          <a class="google-quick-link" href="https://slides.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=slides.google.com&sz=64" alt="">
+            <span class="google-quick-link-name">Google Slides</span><span>›</span>
+          </a>
+          <a class="google-quick-link" href="https://sheets.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=sheets.google.com&sz=64" alt="">
+            <span class="google-quick-link-name">Google Sheets</span><span>›</span>
+          </a>
+          <a class="google-quick-link" href="https://calendar.google.com/">
+            <img src="https://www.google.com/s2/favicons?domain=calendar.google.com&sz=64" alt="">
+            <span class="google-quick-link-name">Google Calendar</span><span>›</span>
+          </a>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="config.js"></script>
+  <script src="app.js?v=20260827-2013"></script>
+</body>
+</html>
