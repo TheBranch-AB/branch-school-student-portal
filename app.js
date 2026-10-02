@@ -246,6 +246,69 @@ function restoreSignedInUser() {
   }
 }
 
+
+function signOutStudent() {
+  // Clear the portal's saved identity and cached Google data access.
+  localStorage.removeItem("branchPortalUser");
+  sessionStorage.removeItem(GOOGLE_DATA_SESSION_KEY);
+  localStorage.removeItem(GOOGLE_DATA_LOCAL_KEY);
+
+  calendarAccessToken = "";
+  classroomAccessToken = "";
+  weekCalendarEvents = [];
+  classroomAssignments = [];
+
+  // Disable Google One Tap auto-select for the previous account.
+  try {
+    if (window.google?.accounts?.id) {
+      google.accounts.id.disableAutoSelect();
+    }
+  } catch (error) {
+    console.warn("Could not disable Google auto-select:", error);
+  }
+
+  setStudentInfo("Student", "Signed out");
+  document.getElementById("accountStatus").textContent = "Signed out";
+
+  // Reload so the portal returns to the normal Google sign-in flow.
+  window.location.reload();
+}
+
+function ensureStudentSignOutButton() {
+  if (document.getElementById("branchStudentSignOut")) return;
+
+  const studentInfo =
+    document.getElementById("studentEmail")?.parentElement ||
+    document.getElementById("accountStatus")?.parentElement;
+
+  if (!studentInfo) return;
+
+  const button = document.createElement("button");
+  button.id = "branchStudentSignOut";
+  button.type = "button";
+  button.textContent = "Sign Out";
+  button.setAttribute("aria-label", "Sign out of the student portal");
+  button.style.cssText = [
+    "margin-top:8px",
+    "border:1px solid rgba(255,255,255,.22)",
+    "border-radius:999px",
+    "padding:6px 11px",
+    "background:rgba(255,255,255,.10)",
+    "color:inherit",
+    "font:inherit",
+    "font-size:11px",
+    "font-weight:800",
+    "cursor:pointer"
+  ].join(";");
+
+  button.addEventListener("click", signOutStudent);
+  studentInfo.appendChild(button);
+}
+
+document.addEventListener("DOMContentLoaded", ensureStudentSignOutButton);
+if (document.readyState !== "loading") ensureStudentSignOutButton();
+
+
 function handleGoogleSignIn(response) {
   try {
     const user = decodeGoogleCredential(response.credential);
