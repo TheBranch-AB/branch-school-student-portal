@@ -1077,7 +1077,7 @@ function classroomDueDateToDate(courseWork) {
 
 function formatClassroomDueDate(courseWork) {
   const due = classroomDueDateToDate(courseWork);
-  if (!due) return "No due date";
+  if (!due) return "";
 
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -1185,12 +1185,11 @@ function renderLogoAssignmentHover(failed = false) {
           day: "numeric"
         }).toUpperCase();
       }
-    } else {
-      due.textContent = "NO DUE DATE";
     }
 
     main.append(name, course);
-    link.append(main, due);
+    link.append(main);
+    if (due.textContent) link.append(due);
     list.appendChild(link);
   });
 }
@@ -1288,7 +1287,8 @@ function showClassroomAssignments() {
       due.className = "branch-classroom-due";
       due.textContent = formatClassroomDueDate(item);
 
-      link.append(course, name, due);
+      link.append(course, name);
+      if (due.textContent) link.append(due);
 
       if (item.description) {
         const description = document.createElement("div");
